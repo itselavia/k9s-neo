@@ -28,23 +28,55 @@ type Plugins struct {
 	Plugins plugins `yaml:"plugins"`
 }
 
+// PluginInputType represents the type of input field.
+type PluginInputType string
+
+const (
+	InputTypeString   PluginInputType = "string"
+	InputTypeNumber   PluginInputType = "number"
+	InputTypeBool     PluginInputType = "bool"
+	InputTypeDropdown PluginInputType = "dropdown"
+)
+
+// PluginInput describes an input field for a plugin.
+type PluginInput struct {
+	Name     string          `yaml:"name"`
+	Label    string          `yaml:"label"`
+	Type     PluginInputType `yaml:"type"`
+	Required bool            `yaml:"required"`
+	Options  []string        `yaml:"options"`
+}
+
 // Plugin describes a K9s plugin.
 type Plugin struct {
-	Scopes          []string `yaml:"scopes"`
-	Args            []string `yaml:"args"`
-	ShortCut        string   `yaml:"shortCut"`
-	Override        bool     `yaml:"override"`
-	Pipes           []string `yaml:"pipes"`
-	Description     string   `yaml:"description"`
-	Command         string   `yaml:"command"`
-	Confirm         bool     `yaml:"confirm"`
-	Background      bool     `yaml:"background"`
-	Dangerous       bool     `yaml:"dangerous"`
-	OverwriteOutput bool     `yaml:"overwriteOutput"`
+	Scopes          []string      `yaml:"scopes"`
+	Args            []string      `yaml:"args"`
+	ShortCut        string        `yaml:"shortCut"`
+	Override        bool          `yaml:"override"`
+	Pipes           []string      `yaml:"pipes"`
+	Description     string        `yaml:"description"`
+	Command         string        `yaml:"command"`
+	Confirm         bool          `yaml:"confirm"`
+	Background      bool          `yaml:"background"`
+	Dangerous       bool          `yaml:"dangerous"`
+	OverwriteOutput bool          `yaml:"overwriteOutput"`
+	Inputs          []PluginInput `yaml:"inputs"`
 }
 
 func (p Plugin) String() string {
 	return fmt.Sprintf("[%s] %s(%s)", p.ShortCut, p.Command, strings.Join(p.Args, " "))
+}
+
+// Validate checks the plugin configuration for errors.
+func (p *Plugin) Validate() error {
+	seen := make(map[string]struct{}, len(p.Inputs))
+	for _, input := range p.Inputs {
+		if _, ok := seen[input.Name]; ok {
+			return fmt.Errorf("duplicate input name %q", input.Name)
+		}
+		seen[input.Name] = struct{}{}
+	}
+	return nil
 }
 
 // NewPlugins returns a new plugin.
@@ -109,6 +141,9 @@ func (p *Plugins) load(path string) error {
 		if err := yaml.Unmarshal(bb, &o); err != nil {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
+		if err := o.Validate(); err != nil {
+			return fmt.Errorf("plugin validation failed for %s: %w", path, err)
+		}
 		p.Plugins[strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))] = o
 	case json.PluginsSchema:
 		var oo Plugins
@@ -116,7 +151,11 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo.Plugins {
-			p.Plugins[k] = oo.Plugins[k]
+			plug := oo.Plugins[k]
+			if err := plug.Validate(); err != nil {
+				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
+			}
+			p.Plugins[k] = plug
 		}
 	case json.PluginMultiSchema:
 		var oo plugins
@@ -124,7 +163,11 @@ func (p *Plugins) load(path string) error {
 			return fmt.Errorf("plugin unmarshal failed for %s: %w", path, err)
 		}
 		for k := range oo {
-			p.Plugins[k] = oo[k]
+			plug := oo[k]
+			if err := plug.Validate(); err != nil {
+				return fmt.Errorf("plugin %q validation failed for %s: %w", k, path, err)
+			}
+			p.Plugins[k] = plug
 		}
 	}
 
