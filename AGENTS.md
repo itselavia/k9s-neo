@@ -8,6 +8,7 @@ Current accepted product contracts:
 
 - `docs/adr/0001-v0-product-contract.md`
 - `docs/adr/0002-read-only-safety-contract.md`
+- `docs/adr/0003-performance-trace-schema.md`
 
 ## Mission
 
@@ -180,10 +181,18 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. add the ADR-backed performance trace schema
-2. add request-level instrumentation
-3. add lifecycle markers and the rerunnable benchmark harness
-4. validate the harness locally with synthetic or replay fixtures
+1. add lifecycle markers and the rerunnable benchmark harness
+2. validate the harness locally with synthetic or replay fixtures
+3. capture the real baseline on the work machine
+4. begin measuring shallow, high-confidence changes one by one
+
+Step 3 is complete in this branch:
+
+- ADR-backed perf trace schema
+- hidden runtime-only trace flags
+- transport-level Kubernetes request tracing across client families
+
+Lifecycle markers, first-render instrumentation, and the harness remain Step 4.
 
 Do not jump ahead to broad feature removals before those are done.
 

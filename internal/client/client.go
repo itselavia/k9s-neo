@@ -306,7 +306,7 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
-	cfg, err := a.config.RESTConfig()
+	cfg, err := a.config.RESTConfigFor("core")
 	if err != nil {
 		slog.Error("RestConfig load failed", slogs.Error, err)
 		a.connOK = false
@@ -436,7 +436,7 @@ func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
 		return clt, nil
 	}
 
-	cfg, err := a.RestConfig()
+	cfg, err := a.config.RESTConfigFor("logs")
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +459,7 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 		return c, nil
 	}
 
-	cfg, err := a.RestConfig()
+	cfg, err := a.config.RESTConfigFor("core")
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +487,7 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 		return c, nil
 	}
 
-	cfg, err := a.RestConfig()
+	cfg, err := a.config.RESTConfigFor("discovery")
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +515,7 @@ func (a *APIClient) DynDial() (dynamic.Interface, error) {
 		return c, nil
 	}
 
-	cfg, err := a.RestConfig()
+	cfg, err := a.config.RESTConfigFor("dynamic")
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +534,7 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 		return c, nil
 	}
 
-	cfg, err := a.RestConfig()
+	cfg, err := a.config.RESTConfigFor("metrics")
 	if err != nil {
 		return nil, err
 	}

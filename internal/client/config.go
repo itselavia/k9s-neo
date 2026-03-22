@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/perftrace"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -29,6 +30,7 @@ const (
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags *genericclioptions.ConfigFlags
+	perf  *perftrace.Session
 	mx    sync.RWMutex
 	proxy func(*http.Request) (*url.URL, error)
 }
@@ -54,6 +56,10 @@ func (c *Config) CallTimeout() time.Duration {
 }
 
 func (c *Config) RESTConfig() (*restclient.Config, error) {
+	return c.RESTConfigFor("core")
+}
+
+func (c *Config) RESTConfigFor(role string) (*restclient.Config, error) {
 	cfg, err := c.clientConfig().ClientConfig()
 	if err != nil {
 		return nil, err
@@ -61,8 +67,30 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	if c.proxy != nil {
 		cfg.Proxy = c.proxy
 	}
+	if c.perf != nil && c.perf.Enabled() {
+		composeWrapTransport(cfg, c.perf.WrapTransport(role))
+	}
 
 	return cfg, nil
+}
+
+// SetPerfTrace attaches a runtime perf trace session to this config.
+func (c *Config) SetPerfTrace(p *perftrace.Session) {
+	c.perf = p
+}
+
+func composeWrapTransport(cfg *restclient.Config, wrap func(http.RoundTripper) http.RoundTripper) {
+	if cfg == nil || wrap == nil {
+		return
+	}
+	if cfg.WrapTransport == nil {
+		cfg.WrapTransport = wrap
+		return
+	}
+	oldWrap := cfg.WrapTransport
+	cfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		return oldWrap(wrap(rt))
+	}
 }
 
 // Flags returns configuration flags.

@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/lmittmann/tint"
@@ -37,6 +38,9 @@ var (
 	version, commit, date = "dev", "dev", client.NA
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
+	perfTraceFile         string
+	perfTraceScenario     string
+	perfTraceRunID        string
 
 	rootCmd = &cobra.Command{
 		Use:   appName,
@@ -73,7 +77,7 @@ func Execute() {
 	}
 }
 
-func run(*cobra.Command, []string) error {
+func run(*cobra.Command, []string) (err error) {
 	if err := config.InitLocs(); err != nil {
 		return err
 	}
@@ -105,7 +109,25 @@ func run(*cobra.Command, []string) error {
 		TimeFormat: time.RFC3339,
 	})))
 
-	cfg, err := loadConfiguration()
+	trace, err := newPerfTraceSession()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := trace.Close(err); err == nil && closeErr != nil {
+			err = closeErr
+		}
+	}()
+	trace.Emit(perftrace.Event{
+		Type:    perftrace.EventSessionStart,
+		App:     appName,
+		Version: version,
+		Commit:  commit,
+		PID:     os.Getpid(),
+	})
+	emitConfigSnapshot(trace)
+
+	cfg, err := loadConfiguration(trace)
 	if err != nil {
 		slog.Warn("Fail to load global/context configuration", slogs.Error, err)
 	}
@@ -127,10 +149,11 @@ func run(*cobra.Command, []string) error {
 	return nil
 }
 
-func loadConfiguration() (*config.Config, error) {
+func loadConfiguration(trace *perftrace.Session) (*config.Config, error) {
 	slog.Info("🐶 K9s starting up...")
 
 	k8sCfg := client.NewConfig(k8sFlags)
+	k8sCfg.SetPerfTrace(trace)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
 
@@ -261,7 +284,12 @@ func initK9sFlags() {
 		"",
 		"Sets a path to a dir for a screen dumps",
 	)
-	rootCmd.Flags()
+	rootCmd.Flags().StringVar(&perfTraceFile, "perf-trace-file", "", "Writes internal perf trace JSONL output to the given file")
+	rootCmd.Flags().StringVar(&perfTraceScenario, "perf-trace-scenario", "", "Annotates the internal perf trace with a scenario label")
+	rootCmd.Flags().StringVar(&perfTraceRunID, "perf-trace-run-id", "", "Annotates the internal perf trace with a run identifier")
+	_ = rootCmd.Flags().MarkHidden("perf-trace-file")
+	_ = rootCmd.Flags().MarkHidden("perf-trace-scenario")
+	_ = rootCmd.Flags().MarkHidden("perf-trace-run-id")
 }
 
 func initK8sFlags() {
@@ -419,4 +447,44 @@ func filterFlagCompletions[T any](m map[string]T, s string) ([]string, cobra.She
 	}
 
 	return cc, cobra.ShellCompDirectiveNoFileComp
+}
+
+func newPerfTraceSession() (*perftrace.Session, error) {
+	return perftrace.NewSession(perftrace.Options{
+		File:     perfTraceFile,
+		Scenario: perfTraceScenario,
+		RunID:    perfTraceRunID,
+		App:      appName,
+		Version:  version,
+		Commit:   commit,
+	})
+}
+
+func emitConfigSnapshot(trace *perftrace.Session) {
+	if trace == nil || !trace.Enabled() {
+		return
+	}
+	trace.Emit(perftrace.Event{
+		Type:           perftrace.EventConfigSnapshot,
+		Kubeconfig:     derefString(k8sFlags.KubeConfig),
+		ContextFlag:    derefString(k8sFlags.Context),
+		ClusterFlag:    derefString(k8sFlags.ClusterName),
+		UserFlag:       derefString(k8sFlags.AuthInfoName),
+		NamespaceFlag:  derefString(k8sFlags.Namespace),
+		AllNamespaces:  derefBool(k9sFlags.AllNamespaces),
+		Command:        derefString(k9sFlags.Command),
+		ReadOnly:       derefBool(k9sFlags.ReadOnly),
+		RequestTimeout: derefString(k8sFlags.Timeout),
+	})
+}
+
+func derefString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
+
+func derefBool(v *bool) bool {
+	return v != nil && *v
 }
