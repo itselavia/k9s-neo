@@ -3,6 +3,12 @@
 This file captures the current shared project context for Codex threads working in this repo.
 Update it when major decisions change.
 
+Canonical decision records live in `docs/adr/`.
+Current accepted product contracts:
+
+- `docs/adr/0001-v0-product-contract.md`
+- `docs/adr/0002-read-only-safety-contract.md`
+
 ## Mission
 
 Fork K9s into a read-only, scale-first Kubernetes triage TUI for very large clusters.
@@ -37,14 +43,20 @@ Final product must not support:
 - edit
 - delete
 - apply
+- replace
+- patch
 - scale
 - restart
+- rollback
 - port-forward
 - shell
+- exec
 - attach
 - transfer
 - helper pods
-- plugin execution that can mutate state or launch cluster-side behavior
+- debug containers
+- node shell flows
+- plugin loading or execution
 
 Do not settle for "hidden in the UI". The end state must be defensibly read-only.
 
@@ -168,9 +180,10 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. install the local Go toolchain and verify stock build
-2. add instrumentation-only hooks and trace schema
-3. add the benchmark harness
+1. add the ADR-backed performance trace schema
+2. add request-level instrumentation
+3. add lifecycle markers and the rerunnable benchmark harness
+4. validate the harness locally with synthetic or replay fixtures
 
 Do not jump ahead to broad feature removals before those are done.
 
