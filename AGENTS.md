@@ -183,10 +183,10 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. validate the harness locally with replay fixtures
-2. capture the real baseline on the work machine
-3. begin measuring shallow, high-confidence changes one by one
-4. keep deeper data-path work blocked on benchmark evidence
+1. capture the real baseline on the work machine
+2. begin measuring shallow, high-confidence changes one by one
+3. keep deeper data-path work blocked on benchmark evidence
+4. keep strict read-only hardening separate from benchmark-baseline capture
 
 Step 4 is complete in this branch:
 
@@ -204,6 +204,13 @@ Step 5 scope is now fixed:
 - CI-enforced replay artifact regeneration
 - explicit `live` vs `replay` artifact provenance
 - synthetic API smoke deferred unless replay proves insufficient
+
+Step 5 is complete in this branch:
+
+- checked-in replay fixtures regenerate the standard artifact layout
+- replay validation is CI-enforced
+- raw live traces are preserved as captured bytes when present
+- local methodology validation is complete; real benchmark evidence still requires the work machine
 
 Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 

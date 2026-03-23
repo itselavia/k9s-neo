@@ -1,4 +1,12 @@
-# K9s community plugins
+# K9s Community Plugins
+
+This directory is inherited from upstream K9s and is kept for reference while
+the fork is still being narrowed.
+
+It is not a statement of K9s Neo product support.
+K9s Neo's accepted v0 safety contract explicitly forbids plugin loading and
+plugin execution in the final product; strict read-only hardening for that has
+not landed yet.
 
 K9s plugins extend the tool to provide additional functionality via actions to further help you observe or administer
 your Kubernetes clusters.

@@ -1,203 +1,102 @@
-<img src="assets/k9s.png" alt="k9s">
+<img src="assets/k9s.png" alt="k9s neo">
 
-## K9s - Kubernetes CLI To Manage Your Clusters In Style!
+# K9s Neo
 
-K9s provides a terminal UI to interact with your Kubernetes clusters.
-The aim of this project is to make it easier to navigate, observe and manage
-your applications in the wild. K9s continually watches Kubernetes
-for changes and offers subsequent commands to interact with your observed resources.
+K9s Neo is a public downstream fork of K9s focused on one narrower goal:
+a read-only, scale-first Kubernetes triage TUI for very large clusters.
 
----
+This repo is not trying to be a drop-in replacement for all of K9s.
+The product thesis is a smaller tool that is measurably faster and safer for
+high-cardinality SRE workflows.
 
-## Note...
+## Current Status
 
-K9s is not pimped out by a big corporation with deep pockets.
-It is a complex OSS project that demands a lot of my time to maintain and support.
-K9s will always remain OSS and therefore free! That said, if you feel k9s makes your day to day Kubernetes journey a tad brighter, saves you time and makes you more productive, please consider [sponsoring us!](https://github.com/sponsors/derailed)
-Your donations will go a long way in keeping our servers lights on and beers in our fridge!
+This branch is the instrumented baseline and benchmark-prep branch.
 
-**Thank you!**
+- Steps 1-5 are complete: baseline build, ADRs, transport tracing, lifecycle markers, live benchmark harness, and replay-only local validation.
+- No live-cluster benchmark claims exist yet.
+- The current branch is not yet strictly read-only by construction.
+- Agones is in the product contract, but explicit Agones support has not landed in code yet.
+- The next major step is capturing the real baseline on the work machine.
 
----
+## What This Repo Is Trying To Prove
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s?)](https://goreportcard.com/report/github.com/derailed/k9s)
-[![golangci badge](https://github.com/golangci/golangci-web/blob/master/src/assets/images/badge_a_plus_flat.svg)](https://golangci.com/r/github.com/derailed/k9s)
-[![Docker Pulls](https://img.shields.io/docker/pulls/derailed/k9s.svg?maxAge=604800)](https://hub.docker.com/r/derailed/k9s/)
-[![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
-[![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)](https://github.com/derailed/k9s/releases)
+K9s Neo only deserves to exist if it becomes meaningfully different from
+upstream `k9s --readonly`.
 
----
+That means proving at least one of these with evidence:
 
-## Screenshots
+- a materially faster hot path for large-cluster triage
+- a currently failing path that becomes usable
+- a materially stronger read-only safety boundary
+- a materially smaller maintenance surface for the target workflow
 
-1. Pods
-      <img src="assets/screen_po.png"/>
-2. Logs
-      <img src="assets/screen_logs.png"/>
-3. Deployments
-      <img src="assets/screen_dp.png"/>
+## Product Contracts
 
----
+The authoritative project contracts live in `docs/adr/`:
 
-## Demo Videos/Recordings
+- `docs/adr/0001-v0-product-contract.md`
+- `docs/adr/0002-read-only-safety-contract.md`
+- `docs/adr/0003-performance-trace-schema.md`
+- `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
+- `docs/adr/0005-replay-only-local-validation.md`
 
-* [K9s v0.40.0 -Column Blow- Sneak peek](https://youtu.be/iy6RDozAM4A)
-* [K9s v0.31.0 Configs+Sneak peek](https://youtu.be/X3444KfjguE)
-* [K9s v0.30.0 Sneak peek](https://youtu.be/mVBc1XneRJ4)
-* [Vulnerability Scans](https://youtu.be/ULkl0MsaidU)
-* [K9s v0.29.0](https://youtu.be/oiU3wmoAkBo)
-* [K9s v0.21.3](https://youtu.be/wG8KCwDAhnw)
-* [K9s v0.19.X](https://youtu.be/kj-WverKZ24)
-* [K9s v0.18.0](https://www.youtube.com/watch?v=zMnD5e53yRw)
-* [K9s v0.17.0](https://www.youtube.com/watch?v=7S33CNLAofk&feature=youtu.be)
-* [K9s Pulses](https://asciinema.org/a/UbXKPal6IWpTaVAjBBFmizcGN)
-* [K9s v0.15.1](https://youtu.be/7Fx4XQ2ftpM)
-* [K9s v0.13.0](https://www.youtube.com/watch?v=qaeR2iK7U0o&t=15s)
-* [K9s v0.9.0](https://www.youtube.com/watch?v=bxKfqumjW4I)
-* [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
-* [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
+Repo-local project memory for future Codex threads lives in `AGENTS.md`.
 
----
+## Development Build
 
-## Documentation
+This fork is currently build-from-source first.
+There are no fork-specific packaged releases yet, and upstream install commands
+should not be treated as installation instructions for K9s Neo.
 
-Please refer to our [K9s documentation](https://k9scli.io) site for installation, usage, customization and tips.
+Bootstrap the required Go toolchain:
 
----
+```shell
+./hack/bootstrap-go.sh
+./hack/with-go.sh go version
+```
 
-## Slack Channel
+Build the binary with isolated caches:
 
-Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
+```shell
+GOCACHE=/tmp/k9s-neo-gocache \
+GOMODCACHE=/tmp/k9s-neo-gomodcache \
+GOPATH=/tmp/k9s-neo-gopath \
+./hack/with-go.sh make build
+```
 
-* Channel: [K9sersSlack](https://k9sers.slack.com/)
-* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/zt-3360a389v-ElLHrb0Dp1kAXqYUItSAFA)
+Verify the build:
 
----
+```shell
+./execs/k9s version
+```
 
-## Installation
+More local setup detail lives in:
 
-K9s is available on Linux, macOS and Windows platforms.
-Binaries for Linux, Windows and Mac are available as tarballs in the [release page](https://github.com/derailed/k9s/releases).
+- `docs/development/local-toolchain.md`
+- `docs/development/step-1-baseline.md`
 
-* Via [Homebrew](https://brew.sh/) for macOS or Linux
+## Benchmarking And Evidence Boundaries
 
-   ```shell
-   brew install derailed/k9s/k9s
-   ```
+Benchmark plumbing lives under `hack/bench/`.
 
-* Via [MacPorts](https://www.macports.org)
+- `run.py` is the live benchmark entrypoint and the only path intended for real benchmark evidence.
+- `replay.py` is validation-only and produces `source_kind=replay` artifacts.
+- Replay results are never performance claims.
+- Public benchmark claims stay blocked until sanitized live-cluster results exist.
 
-   ```shell
-   sudo port install k9s
-   ```
+## Important Honesty Notes
 
-* Via [snap](https://snapcraft.io/k9s) for Linux
+- Upstream K9s documentation and feature descriptions do not automatically describe K9s Neo.
+- Some upstream mutation-capable and plugin-related paths still exist in this branch because strict read-only hardening has not landed yet.
+- Some upstream breadth is intentionally still present because the current branch is the measurement baseline, not the narrowed end state.
 
-  ```shell
-  snap install k9s --devmode
-  ```
+## Upstream K9s Reference (Inherited)
 
-* On Arch Linux
-
-  ```shell
-  pacman -S k9s
-  ```
-
-* On OpenSUSE Linux distribution
-
-  ```shell
-  zypper install k9s
-  ```
-
-* On FreeBSD
-
-  ```shell
-  pkg install k9s
-  ```
-
-* On Ubuntu
-
-  ```shell
-  wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb && sudo apt install ./k9s_linux_amd64.deb && rm k9s_linux_amd64.deb
-  ```
-
-* On Fedora (42+)
-
-  ```shell
-  dnf install k9s
-  ```
-
-* Via [Winget](https://github.com/microsoft/winget-cli) for Windows
-
-  ```shell
-  winget install k9s
-  ```
-
-* Via [Scoop](https://scoop.sh) for Windows
-
-  ```shell
-  scoop install k9s
-  ```
-
-* Via [Chocolatey](https://chocolatey.org/packages/k9s) for Windows
-
-  ```shell
-  choco install k9s
-  ```
-
-* Via a GO install
-
-  ```shell
-  # NOTE: The dev version will be in effect!
-  go install github.com/derailed/k9s@latest
-  ```
-
-* Via [Webi](https://webinstall.dev) for Linux and macOS
-
-  ```shell
-  curl -sS https://webinstall.dev/k9s | bash
-  ```
-
-* Via [pkgx](https://pkgx.dev/pkgs/k9scli.io/) for Linux and macOS
-
-  ```shell
-  pkgx k9s
-  ```
-
-* Via [gah](https://github.com/marverix/gah) for Linux and macOS
-
-  ```shell
-  gah install k9s
-  ```
-
-* Via [Webi](https://webinstall.dev) for Windows
-
-  ```shell
-  curl.exe -A MS https://webinstall.dev/k9s | powershell
-  ```
-
-* As a [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) (for the Docker Desktop built in Kubernetes Server)
-
-  ```shell
-  docker extension install spurin/k9s-dd-extension:latest
-  ```
-
----
-
-## Building From Source
-
- K9s is currently using GO v1.23.X or above.
- In order to build K9s from source you must:
-
- 1. Clone the repo
- 2. Build and run the executable
-
-      ```shell
-      make build && ./execs/k9s
-      ```
-
----
+The remainder of this README is retained as inherited upstream reference material.
+It can still be useful for understanding current upstream behavior, but it is not
+the product contract for K9s Neo and may describe features that this fork plans
+to remove, narrow, or treat as unsupported.
 
 ## Running with Docker
 
