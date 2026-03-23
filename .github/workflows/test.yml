@@ -31,3 +31,8 @@ jobs:
         run: make test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Replay Validation
+        run: |
+          python3 -m unittest discover -s hack/bench/tests
+          python3 hack/bench/replay.py --fixtures hack/bench/fixtures/replay --label ci-replay

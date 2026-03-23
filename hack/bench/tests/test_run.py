@@ -153,6 +153,77 @@ class BenchRunTests(unittest.TestCase):
             self.assertEqual(1, len(second))
             self.assertEqual("b", second[0]["marker"])
 
+    def test_write_run_artifacts_preserves_existing_live_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "runs" / "pods_startup" / "cold-01"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            trace_path = run_dir / "trace.jsonl"
+            raw_trace = b'{"marker":"first_useful_row"}\n{"marker":"partial"'
+            trace_path.write_bytes(raw_trace)
+
+            result = bench_run.write_run_artifacts(
+                run_dir,
+                {
+                    "source_kind": bench_run.SOURCE_KIND_LIVE,
+                    "scenario": "pods_startup",
+                    "mode": "cold",
+                    "run_index": 1,
+                    "status": "failed",
+                    "events": [{"marker": "different"}],
+                    "metrics": {},
+                },
+            )
+
+            self.assertEqual(raw_trace, trace_path.read_bytes())
+            self.assertEqual(str(trace_path), result["trace_file"])
+
+    def test_write_run_artifacts_rewrites_replay_trace_from_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "runs" / "pods_startup" / "cold-01"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            trace_path = run_dir / "trace.jsonl"
+            trace_path.write_text("stale\n", encoding="utf-8")
+
+            bench_run.write_run_artifacts(
+                run_dir,
+                {
+                    "source_kind": "replay",
+                    "scenario": "pods_startup",
+                    "mode": "cold",
+                    "run_index": 1,
+                    "status": "ok",
+                    "events": [{"marker": "first_useful_row", "type": "lifecycle_mark"}],
+                    "metrics": {},
+                },
+            )
+
+            self.assertEqual(
+                json.dumps({"marker": "first_useful_row", "type": "lifecycle_mark"}, sort_keys=True) + "\n",
+                trace_path.read_text(encoding="utf-8"),
+            )
+
+    def test_write_run_artifacts_synthesizes_live_trace_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "runs" / "pods_startup" / "cold-01"
+
+            bench_run.write_run_artifacts(
+                run_dir,
+                {
+                    "source_kind": bench_run.SOURCE_KIND_LIVE,
+                    "scenario": "pods_startup",
+                    "mode": "cold",
+                    "run_index": 1,
+                    "status": "ok",
+                    "events": [{"marker": "first_useful_row", "type": "lifecycle_mark"}],
+                    "metrics": {},
+                },
+            )
+
+            self.assertEqual(
+                json.dumps({"marker": "first_useful_row", "type": "lifecycle_mark"}, sort_keys=True) + "\n",
+                (run_dir / "trace.jsonl").read_text(encoding="utf-8"),
+            )
+
     def test_write_report(self) -> None:
         aggregates = {
             "pods_startup:cold": {
@@ -160,6 +231,7 @@ class BenchRunTests(unittest.TestCase):
                 "mode": "cold",
                 "statuses": ["ok"],
                 "status_counts": {"ok": 1},
+                "source_kinds": ["replay"],
                 "ok_run_count": 1,
                 "total_run_count": 1,
                 "time_to_first_useful_row_ms": {"min": 1.0, "median": 1.0, "mean": 1.0, "max": 1.0},
@@ -170,12 +242,15 @@ class BenchRunTests(unittest.TestCase):
             bench_run.write_report(path, aggregates)
             text = path.read_text(encoding="utf-8")
             self.assertIn("pods_startup", text)
+            self.assertIn("Artifact source_kind(s): replay", text)
             self.assertIn("Aggregates include only runs with status `ok`.", text)
+            self.assertIn("source_kinds: replay", text)
             self.assertIn("status_counts: ok=1", text)
 
     def test_aggregate_runs_uses_only_ok_results(self) -> None:
         results = [
             {
+                "source_kind": "replay",
                 "scenario": "pod_events",
                 "mode": "cold",
                 "status": "ok",
@@ -185,6 +260,7 @@ class BenchRunTests(unittest.TestCase):
                 },
             },
             {
+                "source_kind": "replay",
                 "scenario": "pod_events",
                 "mode": "cold",
                 "status": "no_data",
@@ -194,6 +270,7 @@ class BenchRunTests(unittest.TestCase):
                 },
             },
             {
+                "source_kind": "replay",
                 "scenario": "pod_events",
                 "mode": "cold",
                 "status": "failed",
@@ -206,6 +283,7 @@ class BenchRunTests(unittest.TestCase):
 
         aggregate = bench_run.aggregate_runs(results)["pod_events:cold"]
         self.assertEqual({"failed": 1, "no_data": 1, "ok": 1}, aggregate["status_counts"])
+        self.assertEqual(["replay"], aggregate["source_kinds"])
         self.assertEqual(1, aggregate["ok_run_count"])
         self.assertEqual(3, aggregate["total_run_count"])
         self.assertEqual(100.0, aggregate["time_to_first_useful_row_ms"]["mean"])

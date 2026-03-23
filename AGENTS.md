@@ -10,6 +10,7 @@ Current accepted product contracts:
 - `docs/adr/0002-read-only-safety-contract.md`
 - `docs/adr/0003-performance-trace-schema.md`
 - `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
+- `docs/adr/0005-replay-only-local-validation.md`
 
 ## Mission
 
@@ -140,7 +141,7 @@ TTY scraping is secondary validation only.
 
 Current intended workflow:
 
-- personal machine: local development, instrumentation, unit tests, fake-client tests, synthetic fixtures, harness work, docs
+- personal machine: local development, instrumentation, unit tests, fake-client tests, replay fixtures, harness work, docs
 - work machine: real-cluster benchmarking and final proof
 
 Important:
@@ -163,7 +164,7 @@ Most likely early wins:
 2. Freeze the v0 product contract in ADRs.
 3. Add performance trace schema and request-level instrumentation.
 4. Add lifecycle markers and the rerunnable benchmark harness.
-5. Validate the harness locally with synthetic or replay fixtures.
+5. Validate the harness locally with replay fixtures.
 6. Capture real baseline on the work machine.
 7. Land shallow, high-confidence wins one by one:
    - lazy metrics by default
@@ -182,7 +183,7 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. validate the harness locally with synthetic or replay fixtures
+1. validate the harness locally with replay fixtures
 2. capture the real baseline on the work machine
 3. begin measuring shallow, high-confidence changes one by one
 4. keep deeper data-path work blocked on benchmark evidence
@@ -196,6 +197,13 @@ Step 4 is complete in this branch:
 - corrected marker semantics for post-draw useful-row timing and action-boundary detail timing
 - scenario-anchor-aware harness metric derivation for multi-step flows
 - `ok`-only aggregate summaries with raw failed and `no_data` artifacts preserved
+
+Step 5 scope is now fixed:
+
+- replay-only local validation
+- CI-enforced replay artifact regeneration
+- explicit `live` vs `replay` artifact provenance
+- synthetic API smoke deferred unless replay proves insufficient
 
 Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 

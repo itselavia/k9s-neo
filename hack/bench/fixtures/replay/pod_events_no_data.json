@@ -1,0 +1,134 @@
+{
+  "fixture_schema_version": 1,
+  "scenario": "pod_events",
+  "mode": "cold",
+  "run_index": 1,
+  "status": "no_data",
+  "error": null,
+  "events": [
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 100,
+      "view_seq": 1,
+      "view_name": "Pod"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "pods",
+      "kube_verb": "list",
+      "response_bytes": 210,
+      "object_count": 2,
+      "since_process_start_ms": 120
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 150,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "selected_path": "default/api-0",
+      "rows_total": 2,
+      "rows_visible": 2
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 200,
+      "view_seq": 2,
+      "view_name": "Event"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "events",
+      "kube_verb": "list",
+      "response_bytes": 140,
+      "object_count": 1,
+      "since_process_start_ms": 210
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 220,
+      "view_seq": 2,
+      "view_name": "Event",
+      "rows_total": 1,
+      "rows_visible": 1
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "filter_start",
+      "since_process_start_ms": 250,
+      "view_seq": 2,
+      "view_name": "Event",
+      "filter_text": "api-0"
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "filter_settle",
+      "since_process_start_ms": 280,
+      "view_seq": 2,
+      "view_name": "Event",
+      "rows_total": 0,
+      "rows_visible": 0
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_s": 0.25,
+      "rss_bytes": 1048576,
+      "cpu_percent": 6.0
+    }
+  ],
+  "anchors": {
+    "terminal_wait_event": {
+      "type": "lifecycle_mark",
+      "marker": "filter_settle",
+      "since_process_start_ms": 280,
+      "view_seq": 2,
+      "view_name": "Event",
+      "rows_total": 0,
+      "rows_visible": 0
+    },
+    "view_anchor_event": {
+      "type": "lifecycle_mark",
+      "marker": "filter_settle",
+      "since_process_start_ms": 280,
+      "view_seq": 2,
+      "view_name": "Event",
+      "rows_total": 0,
+      "rows_visible": 0
+    },
+    "matched_wait_events": [
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 150,
+        "view_seq": 1,
+        "view_name": "Pod"
+      },
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 220,
+        "view_seq": 2,
+        "view_name": "Event"
+      },
+      {
+        "type": "lifecycle_mark",
+        "marker": "filter_settle",
+        "since_process_start_ms": 280,
+        "view_seq": 2,
+        "view_name": "Event",
+        "rows_total": 0,
+        "rows_visible": 0
+      }
+    ]
+  },
+  "state": {
+    "active_view": "Event",
+    "origin_selected_name": "api-0",
+    "origin_selected_namespace": "default",
+    "origin_selected_path": "default/api-0"
+  }
+}

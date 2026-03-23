@@ -1,0 +1,103 @@
+{
+  "fixture_schema_version": 1,
+  "scenario": "pods_startup",
+  "mode": "cold",
+  "run_index": 1,
+  "status": "ok",
+  "error": null,
+  "events": [
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 100,
+      "view_seq": 1,
+      "view_name": "Pod"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "pods",
+      "kube_verb": "list",
+      "response_bytes": 220,
+      "object_count": 2,
+      "since_process_start_ms": 120
+    },
+    {
+      "type": "kube_stream_open",
+      "resource": "pods",
+      "kube_verb": "watch",
+      "watch": true,
+      "since_process_start_ms": 140
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 150,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "selected_path": "default/api-0",
+      "rows_total": 2,
+      "rows_visible": 2
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_key_after_render",
+      "since_process_start_ms": 190,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "key_name": "Ctrl-R"
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_s": 0.25,
+      "rss_bytes": 1048576,
+      "cpu_percent": 5.0
+    },
+    {
+      "elapsed_s": 0.5,
+      "rss_bytes": 2097152,
+      "cpu_percent": 7.0
+    }
+  ],
+  "anchors": {
+    "terminal_wait_event": {
+      "type": "lifecycle_mark",
+      "marker": "first_key_after_render",
+      "since_process_start_ms": 190,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "key_name": "Ctrl-R"
+    },
+    "view_anchor_event": {
+      "type": "lifecycle_mark",
+      "marker": "first_key_after_render",
+      "since_process_start_ms": 190,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "key_name": "Ctrl-R"
+    },
+    "matched_wait_events": [
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 150,
+        "view_seq": 1,
+        "view_name": "Pod"
+      },
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_key_after_render",
+        "since_process_start_ms": 190,
+        "view_seq": 1,
+        "view_name": "Pod",
+        "key_name": "Ctrl-R"
+      }
+    ]
+  },
+  "state": {
+    "active_view": "Pod",
+    "selected_name": "api-0",
+    "selected_namespace": "default",
+    "selected_path": "default/api-0"
+  }
+}

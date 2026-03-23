@@ -70,6 +70,7 @@ Negative:
 
 ## Deferred Questions
 
-- Synthetic and replay fixtures remain a separate step.
+- Replay-only local validation remains a separate step under ADR 0005.
+- Synthetic API smoke remains explicitly deferred unless replay-only validation proves insufficient.
 - Real-cluster benchmark baselines remain a work-machine step.
 - Any public benchmark claims remain blocked on sanitized live-cluster results.

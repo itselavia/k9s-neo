@@ -1,0 +1,123 @@
+{
+  "fixture_schema_version": 1,
+  "scenario": "nodes_first_render",
+  "mode": "cold",
+  "run_index": 1,
+  "status": "ok",
+  "error": null,
+  "events": [
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 100,
+      "view_seq": 1,
+      "view_name": "Pod"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "pods",
+      "kube_verb": "list",
+      "response_bytes": 200,
+      "object_count": 2,
+      "since_process_start_ms": 120
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 150,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "selected_path": "default/api-0",
+      "rows_total": 2,
+      "rows_visible": 2
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "command_start",
+      "since_process_start_ms": 200,
+      "command_line": ":nodes"
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 400,
+      "view_seq": 2,
+      "view_name": "Node"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "nodes",
+      "kube_verb": "list",
+      "response_bytes": 310,
+      "object_count": 3,
+      "since_process_start_ms": 430
+    },
+    {
+      "type": "kube_stream_open",
+      "resource": "nodes",
+      "kube_verb": "watch",
+      "watch": true,
+      "since_process_start_ms": 440
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 450,
+      "view_seq": 2,
+      "view_name": "Node",
+      "selected_path": "-/node-a",
+      "rows_total": 3,
+      "rows_visible": 3
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_s": 0.25,
+      "rss_bytes": 1572864,
+      "cpu_percent": 9.0
+    },
+    {
+      "elapsed_s": 0.5,
+      "rss_bytes": 3145728,
+      "cpu_percent": 10.5
+    }
+  ],
+  "anchors": {
+    "terminal_wait_event": {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 450,
+      "view_seq": 2,
+      "view_name": "Node"
+    },
+    "view_anchor_event": {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 450,
+      "view_seq": 2,
+      "view_name": "Node"
+    },
+    "matched_wait_events": [
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 150,
+        "view_seq": 1,
+        "view_name": "Pod"
+      },
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 450,
+        "view_seq": 2,
+        "view_name": "Node"
+      }
+    ]
+  },
+  "state": {
+    "active_view": "Node",
+    "selected_name": "node-a",
+    "selected_namespace": "-",
+    "selected_path": "-/node-a"
+  }
+}

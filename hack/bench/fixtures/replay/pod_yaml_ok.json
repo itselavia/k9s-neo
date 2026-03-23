@@ -1,0 +1,98 @@
+{
+  "fixture_schema_version": 1,
+  "scenario": "pod_yaml",
+  "mode": "warm",
+  "run_index": 1,
+  "status": "ok",
+  "error": null,
+  "events": [
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_render_committed",
+      "since_process_start_ms": 90,
+      "view_seq": 1,
+      "view_name": "Pod"
+    },
+    {
+      "type": "kube_request_complete",
+      "resource": "pods",
+      "kube_verb": "list",
+      "response_bytes": 180,
+      "object_count": 2,
+      "since_process_start_ms": 110
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 140,
+      "view_seq": 1,
+      "view_name": "Pod",
+      "selected_path": "default/api-0",
+      "rows_total": 2,
+      "rows_visible": 2
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "detail_open_start",
+      "since_process_start_ms": 210,
+      "detail_kind": "yaml",
+      "gvr": "v1/pods",
+      "path": "default/api-0"
+    },
+    {
+      "type": "lifecycle_mark",
+      "marker": "detail_content_ready",
+      "since_process_start_ms": 270,
+      "detail_kind": "yaml",
+      "view_seq": 2,
+      "view_name": "YAML"
+    }
+  ],
+  "samples": [
+    {
+      "elapsed_s": 0.25,
+      "rss_bytes": 1048576,
+      "cpu_percent": 4.0
+    }
+  ],
+  "anchors": {
+    "terminal_wait_event": {
+      "type": "lifecycle_mark",
+      "marker": "detail_content_ready",
+      "since_process_start_ms": 270,
+      "detail_kind": "yaml",
+      "view_seq": 2,
+      "view_name": "YAML"
+    },
+    "view_anchor_event": {
+      "type": "lifecycle_mark",
+      "marker": "first_useful_row",
+      "since_process_start_ms": 140,
+      "view_seq": 1,
+      "view_name": "Pod"
+    },
+    "matched_wait_events": [
+      {
+        "type": "lifecycle_mark",
+        "marker": "first_useful_row",
+        "since_process_start_ms": 140,
+        "view_seq": 1,
+        "view_name": "Pod"
+      },
+      {
+        "type": "lifecycle_mark",
+        "marker": "detail_content_ready",
+        "since_process_start_ms": 270,
+        "detail_kind": "yaml",
+        "view_seq": 2,
+        "view_name": "YAML"
+      }
+    ]
+  },
+  "state": {
+    "active_view": "YAML",
+    "selected_name": "api-0",
+    "selected_namespace": "default",
+    "selected_path": "default/api-0"
+  }
+}

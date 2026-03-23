@@ -23,6 +23,10 @@ default: help
 test:                    ## Run all tests
 	@go clean --testcache && go test ./...
 
+bench-replay-validate:   ## Run replay-only harness validation
+	@python3 -m unittest discover -s hack/bench/tests
+	@python3 hack/bench/replay.py --fixtures hack/bench/fixtures/replay --label replay-validation
+
 cover:                   ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out
