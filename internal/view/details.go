@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
@@ -39,6 +40,7 @@ type Details struct {
 	searchable                bool
 	fullScreen                bool
 	contentType               string
+	viewSeq                   int64
 }
 
 // NewDetails returns a details viewer.
@@ -194,7 +196,37 @@ func (d *Details) Actions() *ui.KeyActions {
 func (d *Details) Name() string { return d.title }
 
 // Start starts the view updater.
-func (*Details) Start() {}
+func (d *Details) Start() {
+	if trace := d.app.perfTrace(); trace != nil && len(d.model.Peek()) > 0 {
+		trace.MarkViewOnce(d.viewSeq, perftrace.MarkerDetailContentReady, perftrace.Event{
+			DetailKind: d.DetailKind(),
+			Path:       d.subject,
+		})
+	}
+}
+
+// SetViewSeq tracks the active lifecycle view sequence.
+func (d *Details) SetViewSeq(seq int64) {
+	d.viewSeq = seq
+}
+
+// ViewSeq returns the active lifecycle view sequence.
+func (d *Details) ViewSeq() int64 {
+	return d.viewSeq
+}
+
+// TraceViewMeta returns lifecycle metadata for this details view.
+func (d *Details) TraceViewMeta() perftrace.Event {
+	return perftrace.Event{
+		ViewName: d.Name(),
+		Path:     d.subject,
+	}
+}
+
+// DetailKind returns the benchmark detail kind for this component.
+func (d *Details) DetailKind() string {
+	return detailKind(d.title)
+}
 
 // Stop terminates the updater.
 func (d *Details) Stop() {

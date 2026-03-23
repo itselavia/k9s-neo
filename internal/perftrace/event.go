@@ -6,14 +6,38 @@ package perftrace
 import "time"
 
 const (
-	schemaVersion = 1
+	schemaVersion = 2
 
 	EventSessionStart        = "session_start"
 	EventConfigSnapshot      = "config_snapshot"
 	EventKubeRequestComplete = "kube_request_complete"
 	EventKubeStreamOpen      = "kube_stream_open"
 	EventKubeStreamClose     = "kube_stream_close"
+	EventLifecycleMark       = "lifecycle_mark"
 	EventSessionEnd          = "session_end"
+)
+
+const (
+	MarkerConfigInitStart      = "config_init_start"
+	MarkerConfigInitEnd        = "config_init_end"
+	MarkerConnectionInitStart  = "connection_init_start"
+	MarkerConnectionInitEnd    = "connection_init_end"
+	MarkerMetricsProbeStart    = "metrics_probe_start"
+	MarkerMetricsProbeEnd      = "metrics_probe_end"
+	MarkerDiscoveryStart       = "discovery_start"
+	MarkerDiscoveryEnd         = "discovery_end"
+	MarkerAuthPreflightStart   = "auth_preflight_start"
+	MarkerAuthPreflightEnd     = "auth_preflight_end"
+	MarkerCommandStart         = "command_start"
+	MarkerViewActivate         = "view_activate"
+	MarkerFirstModelBuilt      = "first_model_built"
+	MarkerFirstRenderCommitted = "first_render_committed"
+	MarkerFirstUsefulRow       = "first_useful_row"
+	MarkerFirstKeyAfterRender  = "first_key_after_render"
+	MarkerFilterStart          = "filter_start"
+	MarkerFilterSettle         = "filter_settle"
+	MarkerDetailOpenStart      = "detail_open_start"
+	MarkerDetailContentReady   = "detail_content_ready"
 )
 
 // Options represents runtime perf trace settings.
@@ -28,12 +52,13 @@ type Options struct {
 
 // Event represents one structured perf trace event.
 type Event struct {
-	SchemaVersion int       `json:"schema_version"`
-	Seq           int64     `json:"seq"`
-	TS            time.Time `json:"ts"`
-	Type          string    `json:"type"`
-	RunID         string    `json:"run_id,omitempty"`
-	Scenario      string    `json:"scenario,omitempty"`
+	SchemaVersion       int       `json:"schema_version"`
+	Seq                 int64     `json:"seq"`
+	TS                  time.Time `json:"ts"`
+	Type                string    `json:"type"`
+	RunID               string    `json:"run_id,omitempty"`
+	Scenario            string    `json:"scenario,omitempty"`
+	SinceProcessStartMS float64   `json:"since_process_start_ms,omitempty"`
 
 	App            string `json:"app,omitempty"`
 	Version        string `json:"version,omitempty"`
@@ -72,8 +97,21 @@ type Event struct {
 	Follow        bool    `json:"follow,omitempty"`
 	ResponseKind  string  `json:"response_kind,omitempty"`
 	ItemCount     int     `json:"item_count,omitempty"`
+	ObjectCount   int     `json:"object_count,omitempty"`
 	BodyInspected bool    `json:"body_inspected,omitempty"`
 	Error         string  `json:"error,omitempty"`
+
+	Marker       string `json:"marker,omitempty"`
+	ViewSeq      int64  `json:"view_seq,omitempty"`
+	ViewName     string `json:"view_name,omitempty"`
+	GVR          string `json:"gvr,omitempty"`
+	SelectedPath string `json:"selected_path,omitempty"`
+	RowsTotal    int    `json:"rows_total,omitempty"`
+	RowsVisible  int    `json:"rows_visible,omitempty"`
+	KeyName      string `json:"key_name,omitempty"`
+	DetailKind   string `json:"detail_kind,omitempty"`
+	CommandLine  string `json:"command_line,omitempty"`
+	FilterText   string `json:"filter_text,omitempty"`
 }
 
 func durationMS(d time.Duration) float64 {

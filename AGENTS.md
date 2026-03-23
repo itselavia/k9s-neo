@@ -9,6 +9,7 @@ Current accepted product contracts:
 - `docs/adr/0001-v0-product-contract.md`
 - `docs/adr/0002-read-only-safety-contract.md`
 - `docs/adr/0003-performance-trace-schema.md`
+- `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
 
 ## Mission
 
@@ -181,20 +182,22 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. add lifecycle markers and the rerunnable benchmark harness
-2. validate the harness locally with synthetic or replay fixtures
-3. capture the real baseline on the work machine
-4. begin measuring shallow, high-confidence changes one by one
+1. validate the harness locally with synthetic or replay fixtures
+2. capture the real baseline on the work machine
+3. begin measuring shallow, high-confidence changes one by one
+4. keep deeper data-path work blocked on benchmark evidence
 
-Step 3 is complete in this branch:
+Step 4 is complete in this branch:
 
-- ADR-backed perf trace schema
-- hidden runtime-only trace flags
-- transport-level Kubernetes request tracing across client families
+- ADR-backed lifecycle trace schema v2
+- startup, discovery, auth, render, filter, and detail lifecycle markers
+- external benchmark harness in `hack/bench/`
+- checked-in scenario manifest and local vars template
+- corrected marker semantics for post-draw useful-row timing and action-boundary detail timing
+- scenario-anchor-aware harness metric derivation for multi-step flows
+- `ok`-only aggregate summaries with raw failed and `no_data` artifacts preserved
 
-Lifecycle markers, first-render instrumentation, and the harness remain Step 4.
-
-Do not jump ahead to broad feature removals before those are done.
+Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 
 ## Final Recommendation Bias
 

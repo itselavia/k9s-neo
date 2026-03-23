@@ -11,8 +11,10 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -42,6 +44,7 @@ type LiveView struct {
 	fullScreen                bool
 	managedField              bool
 	autoRefresh               bool
+	viewSeq                   int64
 }
 
 // NewLiveView returns a live viewer.
@@ -126,6 +129,12 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 			v.text.ScrollToHighlight()
 		}
 		v.updateTitle()
+		if trace := v.app.perfTrace(); trace != nil && len(lines) > 0 {
+			trace.MarkViewOnce(v.viewSeq, perftrace.MarkerDetailContentReady, perftrace.Event{
+				DetailKind: v.DetailKind(),
+				Path:       v.model.GetPath(),
+			})
+		}
 	})
 }
 
@@ -213,6 +222,34 @@ func (v *LiveView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
+}
+
+// SetViewSeq tracks the active lifecycle view sequence.
+func (v *LiveView) SetViewSeq(seq int64) {
+	v.viewSeq = seq
+}
+
+// ViewSeq returns the active lifecycle view sequence.
+func (v *LiveView) ViewSeq() int64 {
+	return v.viewSeq
+}
+
+// TraceViewMeta returns lifecycle metadata for this live view.
+func (v *LiveView) TraceViewMeta() perftrace.Event {
+	path := v.model.GetPath()
+	ns, _ := client.Namespaced(path)
+
+	return perftrace.Event{
+		ViewName:  v.Name(),
+		GVR:       v.model.GVR().String(),
+		Namespace: ns,
+		Path:      path,
+	}
+}
+
+// DetailKind returns the benchmark detail kind for this component.
+func (v *LiveView) DetailKind() string {
+	return detailKind(v.title)
 }
 
 // StylesChanged notifies the skin changed.

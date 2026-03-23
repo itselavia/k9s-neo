@@ -1,0 +1,10 @@
+{
+  "kubeconfig": "/path/to/kubeconfig",
+  "context": "example-context",
+  "big_namespace": "default",
+  "pod_filter_regex": "api|worker",
+  "node_filter": "",
+  "allow_all_namespaces": false,
+  "terminal_cols": 220,
+  "terminal_rows": 60
+}

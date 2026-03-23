@@ -22,6 +22,7 @@ type Session struct {
 	opts     Options
 	file     *os.File
 	writer   *bufio.Writer
+	life     *lifecycleTracker
 	mu       sync.Mutex
 	enabled  bool
 	closed   bool
@@ -32,7 +33,10 @@ type Session struct {
 
 // NewSession returns a new perf trace session.
 func NewSession(opts Options) (*Session, error) {
-	s := &Session{opts: opts}
+	s := &Session{
+		opts: opts,
+		life: newLifecycleTracker(),
+	}
 	if opts.File == "" {
 		return s, nil
 	}
@@ -77,6 +81,7 @@ func (s *Session) Emit(ev Event) {
 	ev.SchemaVersion = schemaVersion
 	ev.Seq = s.seq.Add(1)
 	ev.TS = time.Now().UTC()
+	ev.SinceProcessStartMS = durationMS(time.Since(processStart))
 	if ev.RunID == "" {
 		ev.RunID = s.opts.RunID
 	}
@@ -124,6 +129,72 @@ func (s *Session) WrapTransport(role string) func(http.RoundTripper) http.RoundT
 			role:    role,
 		}
 	}
+}
+
+// Mark emits a lifecycle marker that is not tied to a specific view sequence.
+func (s *Session) Mark(marker string, extra Event) {
+	if s == nil || !s.Enabled() {
+		return
+	}
+
+	extra.Type = EventLifecycleMark
+	extra.Marker = marker
+	s.Emit(extra)
+}
+
+// ActivateView creates a new lifecycle view sequence and emits a view activation marker.
+func (s *Session) ActivateView(viewName, gvr, namespace, path string) int64 {
+	if s == nil || !s.Enabled() {
+		return 0
+	}
+
+	ev := s.life.activate(Event{
+		ViewName:  viewName,
+		GVR:       gvr,
+		Namespace: namespace,
+		Path:      path,
+	})
+	ev.Type = EventLifecycleMark
+	ev.Marker = MarkerViewActivate
+	s.Emit(ev)
+
+	return ev.ViewSeq
+}
+
+// MarkView emits a lifecycle marker for a specific view sequence.
+func (s *Session) MarkView(seq int64, marker string, extra Event) {
+	if s == nil || !s.Enabled() || seq == 0 {
+		return
+	}
+	ev, ok := s.life.eventFor(seq, marker, extra, false)
+	if !ok {
+		return
+	}
+	s.Emit(ev)
+}
+
+// MarkViewOnce emits a lifecycle marker at most once for the given view sequence.
+func (s *Session) MarkViewOnce(seq int64, marker string, extra Event) bool {
+	if s == nil || !s.Enabled() || seq == 0 {
+		return false
+	}
+	ev, ok := s.life.eventFor(seq, marker, extra, true)
+	if !ok {
+		return false
+	}
+	s.Emit(ev)
+	return true
+}
+
+// MarkFirstKeyAfterRender emits the first handled key marker after a useful row exists.
+func (s *Session) MarkFirstKeyAfterRender(seq int64, keyName string) bool {
+	if s == nil || !s.Enabled() || seq == 0 || keyName == "" {
+		return false
+	}
+	if !s.life.hasSeen(seq, MarkerFirstUsefulRow) {
+		return false
+	}
+	return s.MarkViewOnce(seq, MarkerFirstKeyAfterRender, Event{KeyName: keyName})
 }
 
 // Close emits the final session event and closes the underlying file.

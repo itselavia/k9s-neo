@@ -36,6 +36,7 @@ func (p *PageStack) Init(ctx context.Context) (err error) {
 
 // StackPushed notifies a new page was added.
 func (p *PageStack) StackPushed(c model.Component) {
+	p.app.activateComponentTrace(c)
 	c.Start()
 	p.app.SetFocus(c)
 }
@@ -51,6 +52,7 @@ func (p *PageStack) StackTop(top model.Component) {
 	if top == nil {
 		return
 	}
+	p.app.activateComponentTrace(top)
 	top.Start()
 	p.app.SetFocus(top)
 }

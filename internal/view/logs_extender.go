@@ -60,6 +60,7 @@ func isResourcePath(p string) bool {
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	ns, _ := client.Namespaced(path)
+	markDetailOpenStart(l.App(), "logs", l.GVR(), path)
 	_, err := l.App().factory.CanForResource(ns, client.PodGVR, client.ListAccess)
 	if err != nil {
 		l.App().Flash().Err(err)

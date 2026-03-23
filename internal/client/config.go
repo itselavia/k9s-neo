@@ -79,6 +79,11 @@ func (c *Config) SetPerfTrace(p *perftrace.Session) {
 	c.perf = p
 }
 
+// PerfTrace returns the runtime perf trace session if enabled.
+func (c *Config) PerfTrace() *perftrace.Session {
+	return c.perf
+}
+
 func composeWrapTransport(cfg *restclient.Config, wrap func(http.RoundTripper) http.RoundTripper) {
 	if cfg == nil || wrap == nil {
 		return

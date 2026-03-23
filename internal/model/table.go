@@ -17,6 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -237,6 +238,17 @@ func (t *Table) refresh(ctx context.Context) error {
 		return err
 	}
 	data := t.Peek()
+	if trace, ok := ctx.Value(internal.KeyPerfTrace).(*perftrace.Session); ok && trace != nil {
+		if seq, ok := ctx.Value(internal.KeyViewSeq).(int64); ok && seq != 0 {
+			trace.MarkViewOnce(seq, perftrace.MarkerFirstModelBuilt, perftrace.Event{
+				ViewName:  stringValue(ctx.Value(internal.KeyViewName)),
+				GVR:       gvrValue(ctx.Value(internal.KeyGVR)),
+				Namespace: stringValue(ctx.Value(internal.KeyNamespace)),
+				Path:      stringValue(ctx.Value(internal.KeyPath)),
+				RowsTotal: data.RowCount(),
+			})
+		}
+	}
 	if data.RowCount() == 0 {
 		t.fireNoData(data)
 	} else {
@@ -244,6 +256,20 @@ func (t *Table) refresh(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func stringValue(v any) string {
+	s, _ := v.(string)
+	return s
+}
+
+func gvrValue(v any) string {
+	gvr, ok := v.(*client.GVR)
+	if !ok || gvr == nil {
+		return ""
+	}
+
+	return gvr.String()
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {

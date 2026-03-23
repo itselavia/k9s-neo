@@ -202,6 +202,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	defer cancel()
 
 	sel := n.GetTable().GetSelectedItem()
+	markDetailOpenStart(n.App(), detailKind(yamlAction), n.GVR(), sel)
 	gvr := n.GVR().GVR()
 	dial, err := n.App().factory.Client().DynDial()
 	if err != nil {

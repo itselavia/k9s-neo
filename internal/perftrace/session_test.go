@@ -49,6 +49,8 @@ func TestEmitWritesJSONLAndSequences(t *testing.T) {
 	assert.Equal(t, int64(1), events[0].Seq)
 	assert.Equal(t, int64(2), events[1].Seq)
 	assert.Equal(t, int64(3), events[2].Seq)
+	assert.Equal(t, schemaVersion, events[0].SchemaVersion)
+	assert.GreaterOrEqual(t, events[0].SinceProcessStartMS, 0.0)
 	assert.Equal(t, EventSessionEnd, events[2].Type)
 	assert.Equal(t, "run-1", events[0].RunID)
 	assert.Equal(t, "startup", events[0].Scenario)

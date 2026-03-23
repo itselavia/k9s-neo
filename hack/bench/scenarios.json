@@ -1,0 +1,106 @@
+{
+  "defaults": {
+    "terminal_cols": 220,
+    "terminal_rows": 60,
+    "step_timeout_ms": 30000
+  },
+  "scenarios": [
+    {
+      "name": "pods_startup",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_key", "key": "CTRL_R"},
+        {"type": "wait_marker", "marker": "first_key_after_render"}
+      ]
+    },
+    {
+      "name": "pods_filter_settle",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": "/"},
+        {"type": "send_text", "text": "{pod_filter_regex}"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "filter_settle"}
+      ]
+    },
+    {
+      "name": "nodes_first_render",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": ":nodes"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "first_useful_row", "view_name": "Node"}
+      ]
+    },
+    {
+      "name": "node_pod_drilldown",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": ":nodes"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "first_useful_row", "view_name": "Node"},
+        {"type": "send_text", "text": "/{node_filter}", "if_var": "node_filter"},
+        {"type": "send_key", "key": "ENTER", "if_var": "node_filter"},
+        {"type": "wait_marker", "marker": "filter_settle", "if_var": "node_filter"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "first_useful_row", "view_name": "Pod"}
+      ]
+    },
+    {
+      "name": "all_namespaces_pods",
+      "enabled_var": "allow_all_namespaces",
+      "optional": true,
+      "argv": ["-A", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_key", "key": "CTRL_R"},
+        {"type": "wait_marker", "marker": "first_key_after_render"}
+      ]
+    },
+    {
+      "name": "pod_logs",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": "l"},
+        {"type": "wait_marker", "marker": "detail_content_ready", "detail_kind": "logs"}
+      ]
+    },
+    {
+      "name": "pod_yaml",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": "y"},
+        {"type": "wait_marker", "marker": "detail_content_ready", "detail_kind": "yaml"}
+      ]
+    },
+    {
+      "name": "pod_describe",
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": "d"},
+        {"type": "wait_marker", "marker": "detail_content_ready", "detail_kind": "describe"}
+      ]
+    },
+    {
+      "name": "pod_events",
+      "optional": true,
+      "argv": ["-n", "{big_namespace}", "-c", "pod", "--readonly"],
+      "steps": [
+        {"type": "wait_marker", "marker": "first_useful_row"},
+        {"type": "send_text", "text": ":events"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "first_useful_row", "view_name": "Event"},
+        {"type": "send_text", "text": "/{origin_selected_name}"},
+        {"type": "send_key", "key": "ENTER"},
+        {"type": "wait_marker", "marker": "filter_settle", "view_name": "Event", "allow_no_data": true}
+      ]
+    }
+  ]
+}

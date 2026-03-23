@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,6 +71,10 @@ func InitConnection(config *Config, log *slog.Logger) (*APIClient, error) {
 		cache:  cache.NewLRUExpireCache(cacheSize),
 		connOK: true,
 		log:    log.With(slogs.Subsys, "client"),
+	}
+	if trace := config.PerfTrace(); trace != nil {
+		trace.Mark(perftrace.MarkerMetricsProbeStart, perftrace.Event{})
+		defer trace.Mark(perftrace.MarkerMetricsProbeEnd, perftrace.Event{})
 	}
 	if err := a.supportsMetricsResources(); err != nil {
 		slog.Warn("Fail to locate metrics-server", slogs.Error, err)
@@ -176,6 +181,18 @@ func (a *APIClient) CanI(ns string, gvr *GVR, name string, verbs []string) (auth
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
+	if trace := a.config.PerfTrace(); trace != nil {
+		trace.Mark(perftrace.MarkerAuthPreflightStart, perftrace.Event{
+			GVR:       gvr.String(),
+			Namespace: ns,
+			Path:      name,
+		})
+		defer trace.Mark(perftrace.MarkerAuthPreflightEnd, perftrace.Event{
+			GVR:       gvr.String(),
+			Namespace: ns,
+			Path:      name,
+		})
+	}
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})

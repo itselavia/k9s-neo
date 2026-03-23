@@ -50,6 +50,7 @@ func TestNonStreamingRequestEmitsComplete(t *testing.T) {
 	assert.Equal(t, EventKubeRequestComplete, ev.Type)
 	assert.Equal(t, int64(len(body)), ev.ResponseBytes)
 	assert.Equal(t, 2, ev.ItemCount)
+	assert.Equal(t, 2, ev.ObjectCount)
 	assert.Equal(t, "PodList", ev.ResponseKind)
 	assert.Equal(t, "big", ev.Namespace)
 	assert.Equal(t, "pods", ev.Resource)
@@ -119,4 +120,34 @@ func TestOversizedJSONBodySkipsInspection(t *testing.T) {
 	assert.False(t, ev.BodyInspected)
 	assert.Empty(t, ev.ResponseKind)
 	assert.Zero(t, ev.ItemCount)
+}
+
+func TestSingleObjectResponseRecordsObjectCount(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "trace.jsonl")
+	s, err := NewSession(Options{File: path})
+	require.NoError(t, err)
+
+	body := `{"kind":"Pod","metadata":{"name":"pod-a"}}`
+	rt := s.WrapTransport("core")(roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode:    http.StatusOK,
+			ContentLength: int64(len(body)),
+			Header:        http.Header{"Content-Type": []string{"application/json"}},
+			Body:          io.NopCloser(strings.NewReader(body)),
+		}, nil
+	}))
+
+	req, err := http.NewRequest(http.MethodGet, "https://example.com/api/v1/namespaces/big/pods/pod-a", nil)
+	require.NoError(t, err)
+	resp, err := rt.RoundTrip(req)
+	require.NoError(t, err)
+	_, err = io.Copy(io.Discard, resp.Body)
+	require.NoError(t, err)
+	require.NoError(t, resp.Body.Close())
+	require.NoError(t, s.Close(nil))
+
+	events := readEvents(t, path)
+	require.Len(t, events, 2)
+	assert.Equal(t, 1, events[0].ObjectCount)
+	assert.Equal(t, "Pod", events[0].ResponseKind)
 }

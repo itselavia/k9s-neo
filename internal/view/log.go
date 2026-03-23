@@ -20,6 +20,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -51,6 +52,7 @@ type Log struct {
 	follow            bool
 	columnLock        bool
 	requestOneRefresh bool
+	viewSeq           int64
 }
 
 var _ model.Component = (*Log)(nil)
@@ -166,6 +168,12 @@ func (l *Log) LogChanged(lines [][]byte) {
 			l.logs.Clear()
 		}
 		l.Flush(lines)
+		if trace := l.app.perfTrace(); trace != nil && hasLogContent(lines) {
+			trace.MarkViewOnce(l.viewSeq, perftrace.MarkerDetailContentReady, perftrace.Event{
+				DetailKind: l.DetailKind(),
+				Path:       l.model.GetPath(),
+			})
+		}
 	})
 }
 
@@ -193,6 +201,34 @@ func (l *Log) StylesChanged(s *config.Styles) {
 // GetModel returns the log model.
 func (l *Log) GetModel() *model.Log {
 	return l.model
+}
+
+// SetViewSeq tracks the active lifecycle view sequence.
+func (l *Log) SetViewSeq(seq int64) {
+	l.viewSeq = seq
+}
+
+// ViewSeq returns the active lifecycle view sequence.
+func (l *Log) ViewSeq() int64 {
+	return l.viewSeq
+}
+
+// TraceViewMeta returns lifecycle metadata for this log view.
+func (l *Log) TraceViewMeta() perftrace.Event {
+	path := l.model.GetPath()
+	ns, _ := client.Namespaced(path)
+
+	return perftrace.Event{
+		ViewName:  l.Name(),
+		GVR:       l.model.GVR().String(),
+		Namespace: ns,
+		Path:      path,
+	}
+}
+
+// DetailKind returns the benchmark detail kind for this component.
+func (*Log) DetailKind() string {
+	return "logs"
 }
 
 // Hints returns a collection of menu hints.

@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -162,6 +163,12 @@ func IsScalable(m *metav1.APIResource) bool {
 func (m *Meta) LoadResources(f Factory) error {
 	m.mx.Lock()
 	defer m.mx.Unlock()
+	if f != nil && f.Client() != nil && f.Client().Config() != nil {
+		if trace := f.Client().Config().PerfTrace(); trace != nil {
+			trace.Mark(perftrace.MarkerDiscoveryStart, perftrace.Event{})
+			defer trace.Mark(perftrace.MarkerDiscoveryEnd, perftrace.Event{})
+		}
+	}
 
 	m.resMetas.clear()
 	if err := loadPreferred(f, m.resMetas); err != nil {

@@ -31,23 +31,23 @@ func (t *traceTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := t.base.RoundTrip(req)
 	if err != nil {
-		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, 0, 0, 0, "", err, "", 0, false))
+		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, 0, 0, 0, "", err, "", 0, 0, false))
 		return nil, err
 	}
 	if resp == nil {
-		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, 0, 0, 0, "", io.ErrUnexpectedEOF, "", 0, false))
+		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, 0, 0, 0, "", io.ErrUnexpectedEOF, "", 0, 0, false))
 		return resp, nil
 	}
 
 	contentType := resp.Header.Get("Content-Type")
 	if info.streaming {
-		t.session.Emit(requestEvent(EventKubeStreamOpen, reqID, t.role, info, start, resp.StatusCode, 0, resp.ContentLength, contentType, nil, "", 0, false))
+		t.session.Emit(requestEvent(EventKubeStreamOpen, reqID, t.role, info, start, resp.StatusCode, 0, resp.ContentLength, contentType, nil, "", 0, 0, false))
 		resp.Body = newTracingBody(resp.Body, t.session, reqID, t.role, info, start, resp.StatusCode, resp.ContentLength, contentType, true)
 		return resp, nil
 	}
 
 	if resp.Body == nil {
-		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, resp.StatusCode, 0, resp.ContentLength, contentType, nil, "", 0, false))
+		t.session.Emit(requestEvent(EventKubeRequestComplete, reqID, t.role, info, start, resp.StatusCode, 0, resp.ContentLength, contentType, nil, "", 0, 0, false))
 		return resp, nil
 	}
 
@@ -136,7 +136,7 @@ func (b *tracingBody) Close() error {
 
 func (b *tracingBody) finalize(err error) {
 	b.once.Do(func() {
-		kind, itemCount, inspected := b.inspectBody()
+		kind, itemCount, objectCount, inspected := b.inspectBody()
 		eventType := EventKubeRequestComplete
 		if b.streaming {
 			eventType = EventKubeStreamClose
@@ -154,25 +154,33 @@ func (b *tracingBody) finalize(err error) {
 			err,
 			kind,
 			itemCount,
+			objectCount,
 			inspected,
 		))
 	})
 }
 
-func (b *tracingBody) inspectBody() (string, int, bool) {
+func (b *tracingBody) inspectBody() (string, int, int, bool) {
 	if !b.collectBody || b.overflow || !b.sawEOF {
-		return "", 0, false
+		return "", 0, 0, false
 	}
 
 	var doc struct {
-		Kind  string            `json:"kind"`
-		Items []json.RawMessage `json:"items"`
+		Kind  string             `json:"kind"`
+		Items *[]json.RawMessage `json:"items"`
 	}
 	if err := json.Unmarshal(b.buf.Bytes(), &doc); err != nil {
-		return "", 0, false
+		return "", 0, 0, false
 	}
 
-	return doc.Kind, len(doc.Items), true
+	if doc.Items != nil {
+		return doc.Kind, len(*doc.Items), len(*doc.Items), true
+	}
+	if doc.Kind != "" {
+		return doc.Kind, 0, 1, true
+	}
+
+	return "", 0, 0, true
 }
 
 func requestEvent(
@@ -186,6 +194,7 @@ func requestEvent(
 	err error,
 	responseKind string,
 	itemCount int,
+	objectCount int,
 	bodyInspected bool,
 ) Event {
 	ev := Event{
@@ -218,6 +227,7 @@ func requestEvent(
 	if bodyInspected {
 		ev.BodyInspected = true
 		ev.ItemCount = itemCount
+		ev.ObjectCount = objectCount
 	}
 	if err != nil && err != io.EOF {
 		ev.Error = err.Error()

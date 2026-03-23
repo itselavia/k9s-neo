@@ -21,6 +21,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -103,6 +104,9 @@ func (a *App) Init(version string, _ int) error {
 	a.Content.AddListener(a.Menu())
 
 	a.App.Init()
+	a.SetAfterDrawFunc(func(_ tcell.Screen) {
+		a.recordAfterDraw()
+	})
 	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
 
@@ -245,6 +249,11 @@ func (a *App) contextNames() ([]string, error) {
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	if k, ok := a.HasAction(ui.AsKey(evt)); ok && !a.Content.IsTopDialog() {
+		if trace := a.perfTrace(); trace != nil {
+			if tc := currentTracedComponent(a); tc != nil {
+				trace.MarkFirstKeyAfterRender(tc.ViewSeq(), keyName(evt))
+			}
+		}
 		return k.Action(evt)
 	}
 
@@ -786,6 +795,13 @@ func (a *App) aliasCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) gotoResource(c, path string, clearStack, pushCmd bool) {
+	if trace := a.perfTrace(); trace != nil {
+		trace.Mark(perftrace.MarkerCommandStart, perftrace.Event{
+			CommandLine: c,
+			Namespace:   client.CleanseNamespace(a.Config.ActiveNamespace()),
+			Path:        path,
+		})
+	}
 	err := a.command.run(cmd.NewInterpreter(c), path, clearStack, pushCmd)
 	if err != nil {
 		d := a.Styles.Dialog()

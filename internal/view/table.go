@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
@@ -28,6 +29,7 @@ type Table struct {
 	envFn      EnvFunc
 	bindKeysFn []BindKeysFunc
 	command    *cmd.Interpreter
+	viewSeq    int64
 }
 
 // NewTable returns a new viewer.
@@ -153,6 +155,31 @@ func (t *Table) defaultEnv() Env {
 // App returns the current app handle.
 func (t *Table) App() *App {
 	return t.app
+}
+
+// SetViewSeq tracks the active lifecycle view sequence.
+func (t *Table) SetViewSeq(seq int64) {
+	t.viewSeq = seq
+}
+
+// ViewSeq returns the active lifecycle view sequence.
+func (t *Table) ViewSeq() int64 {
+	return t.viewSeq
+}
+
+// TraceViewMeta returns lifecycle metadata for this component.
+func (t *Table) TraceViewMeta() perftrace.Event {
+	ns := client.CleanseNamespace(t.GetNamespace())
+	if ns == "" && t.app != nil {
+		ns = client.CleanseNamespace(t.app.Config.ActiveNamespace())
+	}
+
+	return perftrace.Event{
+		ViewName:  t.Name(),
+		GVR:       t.GVR().String(),
+		Namespace: ns,
+		Path:      t.Path,
+	}
 }
 
 // Start runs the component.

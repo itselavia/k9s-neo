@@ -200,6 +200,7 @@ func (w *Workload) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	markDetailOpenStart(w.App(), detailKind(yamlAction), gvr, fqn)
 	v := NewLiveView(w.App(), yamlAction, model.NewYAML(gvr, fqn))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)

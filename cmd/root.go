@@ -151,13 +151,23 @@ func run(*cobra.Command, []string) (err error) {
 
 func loadConfiguration(trace *perftrace.Session) (*config.Config, error) {
 	slog.Info("🐶 K9s starting up...")
+	if trace != nil {
+		trace.Mark(perftrace.MarkerConfigInitStart, perftrace.Event{})
+		defer trace.Mark(perftrace.MarkerConfigInitEnd, perftrace.Event{})
+	}
 
 	k8sCfg := client.NewConfig(k8sFlags)
 	k8sCfg.SetPerfTrace(trace)
 	k9sCfg := config.NewConfig(k8sCfg)
 	var errs error
 
+	if trace != nil {
+		trace.Mark(perftrace.MarkerConnectionInitStart, perftrace.Event{})
+	}
 	conn, err := client.InitConnection(k8sCfg, slog.Default())
+	if trace != nil {
+		trace.Mark(perftrace.MarkerConnectionInitEnd, perftrace.Event{})
+	}
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}

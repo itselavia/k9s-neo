@@ -20,6 +20,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/model1"
+	"github.com/derailed/k9s/internal/perftrace"
 	"github.com/derailed/k9s/internal/slogs"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -42,6 +43,8 @@ type Browser struct {
 	cancelFn   context.CancelFunc
 	mx         sync.RWMutex
 	updating   bool
+	filtering  bool
+	pendingRow *perftrace.Event
 	firstView  atomic.Int32
 }
 
@@ -62,6 +65,57 @@ func (b *Browser) getUpdating() bool {
 	b.mx.RLock()
 	defer b.mx.RUnlock()
 	return b.updating
+}
+
+func (b *Browser) setFiltering(f bool) {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
+	b.filtering = f
+}
+
+func (b *Browser) consumeFiltering() bool {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
+	filtering := b.filtering
+	b.filtering = false
+
+	return filtering
+}
+
+func (b *Browser) setPendingUsefulRow(ev perftrace.Event) {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
+	b.pendingRow = &ev
+}
+
+func (b *Browser) clearPendingUsefulRow() {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
+	b.pendingRow = nil
+}
+
+// SetViewSeq tracks the active lifecycle view sequence.
+func (b *Browser) SetViewSeq(seq int64) {
+	b.Table.SetViewSeq(seq)
+	b.clearPendingUsefulRow()
+}
+
+// ConsumePendingUsefulRow returns and clears the next useful-row candidate.
+func (b *Browser) ConsumePendingUsefulRow() (perftrace.Event, bool) {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
+	if b.pendingRow == nil {
+		return perftrace.Event{}, false
+	}
+	ev := *b.pendingRow
+	b.pendingRow = nil
+
+	return ev, true
 }
 
 // SetCommand sets the current command.
@@ -244,6 +298,14 @@ func (b *Browser) BufferActive(state bool, _ model.BufferKind) {
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		b.UpdateUI(cdata, mdata)
+		if trace := b.app.perfTrace(); trace != nil && b.consumeFiltering() {
+			trace.MarkView(b.ViewSeq(), perftrace.MarkerFilterSettle, perftrace.Event{
+				FilterText:   b.CmdBuff().GetText(),
+				SelectedPath: b.GetSelectedItem(),
+				RowsTotal:    cdata.RowCount(),
+				RowsVisible:  max(b.GetRowCount()-1, 0),
+			})
+		}
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
@@ -322,6 +384,13 @@ func (b *Browser) TableNoData(mdata *model1.TableData) {
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
+		if trace := b.app.perfTrace(); trace != nil && b.consumeFiltering() {
+			trace.MarkView(b.ViewSeq(), perftrace.MarkerFilterSettle, perftrace.Event{
+				FilterText:  b.CmdBuff().GetText(),
+				RowsTotal:   cdata.RowCount(),
+				RowsVisible: max(b.GetRowCount()-1, 0),
+			})
+		}
 	})
 }
 
@@ -352,6 +421,13 @@ func (b *Browser) TableDataChanged(mdata *model1.TableData) {
 		}
 		b.refreshActions()
 		b.UpdateUI(cdata, mdata)
+		if b.GetRowCount() > 1 {
+			b.setPendingUsefulRow(perftrace.Event{
+				SelectedPath: b.GetSelectedItem(),
+				RowsTotal:    cdata.RowCount(),
+				RowsVisible:  max(b.GetRowCount()-1, 0),
+			})
+		}
 	})
 }
 
@@ -391,6 +467,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	markDetailOpenStart(b.app, detailKind(yamlAction), b.GVR(), path)
 	v := NewLiveView(b.app, yamlAction, model.NewYAML(b.GVR(), path))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
@@ -437,6 +514,12 @@ func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		b.Start()
 		return nil
 	}
+	if trace := b.app.perfTrace(); trace != nil {
+		trace.MarkView(b.ViewSeq(), perftrace.MarkerFilterStart, perftrace.Event{
+			FilterText: b.CmdBuff().GetText(),
+		})
+	}
+	b.setFiltering(true)
 	b.Refresh()
 
 	return nil
@@ -595,6 +678,9 @@ func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
+	ctx = context.WithValue(ctx, internal.KeyPerfTrace, b.app.perfTrace())
+	ctx = context.WithValue(ctx, internal.KeyViewSeq, b.ViewSeq())
+	ctx = context.WithValue(ctx, internal.KeyViewName, b.Name())
 	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		if sel, err := ui.ExtractLabelSelector(b.CmdBuff().GetText()); err == nil {
 			ctx = context.WithValue(ctx, internal.KeyLabels, sel)
@@ -604,6 +690,16 @@ func (b *Browser) defaultContext() context.Context {
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
 
 	return ctx
+}
+
+// TraceViewMeta returns lifecycle metadata for this browser.
+func (b *Browser) TraceViewMeta() perftrace.Event {
+	return perftrace.Event{
+		ViewName:  b.Name(),
+		GVR:       b.GVR().String(),
+		Namespace: client.CleanseNamespace(b.GetNamespace()),
+		Path:      b.Path,
+	}
 }
 
 func (b *Browser) refreshActions() {
