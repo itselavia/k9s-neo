@@ -186,10 +186,11 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. stand up a disposable local minikube cluster and capture the first live baseline
-2. begin measuring shallow, high-confidence changes one by one
-3. keep deeper data-path work blocked on benchmark evidence
-4. keep strict read-only hardening separate from benchmark-baseline capture
+1. broaden the local live baseline beyond `pods_startup` to `pods_filter_settle`, `nodes_first_render`, `pod_yaml`, and `pod_describe`
+2. capture a stable local baseline set with raw artifacts and summary output
+3. begin measuring shallow, high-confidence changes one by one on the same local setup
+4. keep deeper data-path work blocked on benchmark evidence
+5. keep strict read-only hardening separate from benchmark-baseline capture
 
 Step 4 is complete in this branch:
 
@@ -218,10 +219,18 @@ Step 5 is complete in this branch:
 Step 6 decision is now fixed in this branch:
 
 - the primary live benchmark environment is a disposable local minikube cluster
-- `vfkit` is the preferred macOS Apple Silicon driver
+- the working bring-up path on this machine is `colima` plus `minikube --driver=docker`
 - single-node, namespace-scoped baseline work comes first
 - multi-node local testing is optional later for targeted node-path scenarios
 - real-cluster validation is optional later work, not the default next step
+
+Step 6 progress in this branch:
+
+- the user-scoped local lab scripts install and manage the disposable cluster
+- the working local bring-up path is proven end to end on this machine
+- the live PTY harness now drives a real K9s Neo session locally with a controlling TTY
+- `pods_startup` completes successfully against the local minikube profile with lifecycle markers and raw artifacts
+- the next Step 6 work is widening the baseline scenario set, not re-solving cluster bootstrap
 
 Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 

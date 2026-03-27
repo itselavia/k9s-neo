@@ -269,6 +269,7 @@ func (v *LiveView) Name() string { return v.title }
 
 // Start starts the view updater.
 func (v *LiveView) Start() {
+	v.app.ensureComponentTrace(v)
 	if v.autoRefresh {
 		var ctx context.Context
 		ctx, v.cancel = context.WithCancel(v.defaultCtx())

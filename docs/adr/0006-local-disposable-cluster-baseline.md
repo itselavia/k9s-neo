@@ -25,12 +25,17 @@ clusters while mutation-capable paths still exist in the codebase.
 
 Step 6 will use a disposable local cluster as the primary live benchmark environment.
 
-For the current macOS Apple Silicon development machine, the preferred setup is:
+For the current macOS Apple Silicon development machine, the working setup is:
 
 - `minikube` as the local Kubernetes distribution
-- `vfkit` as the preferred macOS VM driver
+- `colima` as the user-scoped local VM and Docker runtime
+- `minikube --driver=docker` as the Kubernetes bring-up path
 - single-node startup as the default baseline posture
 - namespace-scoped benchmark runs as the default measurement posture
+
+We initially preferred direct `vfkit`, but on this machine that path depended on
+privileged networking setup that was not available non-interactively. We are
+explicitly choosing the boring path that worked end to end.
 
 Multi-node local testing is allowed later, but only for targeted node-view and
 node-drill-down scenarios after the single-node baseline is working.
@@ -64,6 +69,7 @@ Positive:
 - Live measurements now happen in a disposable environment that matches the current
   safety state of the codebase.
 - We preserve the boring, local feedback loop for instrumented before-and-after work.
+- The local lab runs entirely out of user-scoped state on this machine.
 
 Negative:
 

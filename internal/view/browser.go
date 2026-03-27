@@ -74,6 +74,31 @@ func (b *Browser) setFiltering(f bool) {
 	b.filtering = f
 }
 
+func (b *Browser) beginFiltering(text string) {
+	if internal.IsLabelSelector(text) {
+		return
+	}
+
+	b.mx.Lock()
+	if b.filtering {
+		b.mx.Unlock()
+		return
+	}
+	b.filtering = true
+	b.mx.Unlock()
+
+	if b.app == nil {
+		return
+	}
+	b.app.ensureComponentTrace(b)
+
+	if trace := b.app.perfTrace(); trace != nil {
+		trace.MarkView(b.ViewSeq(), perftrace.MarkerFilterStart, perftrace.Event{
+			FilterText: text,
+		})
+	}
+}
+
 func (b *Browser) consumeFiltering() bool {
 	b.mx.Lock()
 	defer b.mx.Unlock()
@@ -227,6 +252,7 @@ func (b *Browser) Start() {
 
 	b.Stop()
 	b.firstView.Store(0) // Reset first view counter on each start
+	b.app.ensureComponentTrace(b)
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -275,6 +301,7 @@ func (b *Browser) BufferCompleted(text, _ string) {
 		}
 	} else {
 		b.GetModel().SetLabelSelector(labels.Everything())
+		b.beginFiltering(text)
 	}
 }
 
@@ -514,12 +541,7 @@ func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		b.Start()
 		return nil
 	}
-	if trace := b.app.perfTrace(); trace != nil {
-		trace.MarkView(b.ViewSeq(), perftrace.MarkerFilterStart, perftrace.Event{
-			FilterText: b.CmdBuff().GetText(),
-		})
-	}
-	b.setFiltering(true)
+	b.beginFiltering(b.CmdBuff().GetText())
 	b.Refresh()
 
 	return nil

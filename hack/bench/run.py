@@ -99,7 +99,10 @@ class TranscriptRecorder(threading.Thread):
 
     def run(self) -> None:
         while not self.stop_event.is_set():
-            ready, _, _ = select.select([self.fd], [], [], 0.1)
+            try:
+                ready, _, _ = select.select([self.fd], [], [], 0.1)
+            except OSError:
+                return
             if not ready:
                 continue
             try:
@@ -300,6 +303,11 @@ def run_process(
 ) -> tuple[subprocess.Popen[str], int]:
     master_fd, slave_fd = pty.openpty()
     set_pty_size(slave_fd, rows, cols)
+
+    def configure_child_tty() -> None:
+        os.setsid()
+        ioctl(slave_fd, termios.TIOCSCTTY, 0)
+
     proc = subprocess.Popen(
         argv
         + [
@@ -315,7 +323,7 @@ def run_process(
         stderr=slave_fd,
         env=env,
         text=False,
-        preexec_fn=os.setsid,
+        preexec_fn=configure_child_tty,
         close_fds=True,
     )
     os.close(slave_fd)
@@ -362,6 +370,9 @@ def run_scenario_once(
     if cache_layout.home:
         env["HOME"] = str(cache_layout.home)
     env["K9S_CONFIG_DIR"] = str(cache_layout.config_dir)
+    if env.get("TERM", "").lower() in ("", "dumb", "unknown"):
+        env["TERM"] = "xterm-256color"
+    env["COLORTERM"] = env.get("COLORTERM") or "truecolor"
     if base_values.get("kubeconfig"):
         env["KUBECONFIG"] = str(base_values["kubeconfig"])
 

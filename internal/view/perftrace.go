@@ -4,6 +4,7 @@
 package view
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -34,8 +35,8 @@ func (a *App) perfTrace() *perftrace.Session {
 
 func (a *App) activateComponentTrace(c model.Component) {
 	trace := a.perfTrace()
-	tc, ok := c.(tracedComponent)
-	if trace == nil || !ok {
+	tc := unwrapTracedComponent(c)
+	if trace == nil || tc == nil {
 		return
 	}
 
@@ -44,17 +45,69 @@ func (a *App) activateComponentTrace(c model.Component) {
 	tc.SetViewSeq(seq)
 }
 
+func (a *App) ensureComponentTrace(c model.Component) tracedComponent {
+	trace := a.perfTrace()
+	tc := unwrapTracedComponent(c)
+	if trace == nil || tc == nil {
+		return nil
+	}
+	if tc.ViewSeq() != 0 {
+		return tc
+	}
+
+	meta := tc.TraceViewMeta()
+	seq := trace.ActivateView(meta.ViewName, meta.GVR, meta.Namespace, meta.Path)
+	tc.SetViewSeq(seq)
+
+	return tc
+}
+
 func currentTracedComponent(a *App) tracedComponent {
 	if a == nil || a.Content == nil {
 		return nil
 	}
-	top := a.Content.Top()
-	tc, ok := top.(tracedComponent)
-	if !ok {
-		return nil
+
+	return unwrapTracedComponent(a.Content.Top())
+}
+
+func unwrapTracedComponent(c any) tracedComponent {
+	for c != nil {
+		if tc, ok := c.(tracedComponent); ok {
+			return tc
+		}
+
+		rv, ok := unwrapResourceViewer(c)
+		if !ok {
+			return nil
+		}
+		c = rv
 	}
 
-	return tc
+	return nil
+}
+
+func unwrapResourceViewer(c any) (ResourceViewer, bool) {
+	v := reflect.ValueOf(c)
+	if !v.IsValid() {
+		return nil, false
+	}
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil, false
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil, false
+	}
+
+	field := v.FieldByName("ResourceViewer")
+	if !field.IsValid() || !field.CanInterface() {
+		return nil, false
+	}
+
+	rv, ok := field.Interface().(ResourceViewer)
+	return rv, ok
 }
 
 func keyName(evt *tcell.EventKey) string {
@@ -84,7 +137,13 @@ func (a *App) recordAfterDraw() {
 	}
 	trace := a.perfTrace()
 	tc := currentTracedComponent(a)
-	if trace == nil || tc == nil || tc.ViewSeq() == 0 {
+	if trace == nil || tc == nil {
+		return
+	}
+	if tc.ViewSeq() == 0 {
+		tc = a.ensureComponentTrace(tc)
+	}
+	if tc == nil || tc.ViewSeq() == 0 {
 		return
 	}
 	trace.MarkViewOnce(tc.ViewSeq(), perftrace.MarkerFirstRenderCommitted, tc.TraceViewMeta())

@@ -19,8 +19,8 @@ This directory contains the rerunnable external benchmark harness for Step 4.
 3. Keep `vars.local.json` untracked.
 
 Replay validation does not require kubeconfig or cluster access.
-The preferred local live path for this repo is a disposable `minikube` cluster on
-macOS using the `vfkit` driver.
+The working local live path for this repo is a disposable `minikube` cluster on
+macOS using the Docker driver backed by user-scoped `colima`.
 The current execution plan for that path lives in
 `docs/development/step-6-local-baseline-plan.md`.
 
@@ -101,6 +101,7 @@ Artifacts now carry `source_kind` so replay outputs cannot be confused with live
 - The default next-step live environment is a disposable local cluster, not a real work cluster.
 - Local live results are valid for before-and-after engineering comparisons on the same machine.
 - Local live results should be labeled with their actual environment and should not be presented as production-cluster results by default.
+- The current branch has already completed a local `pods_startup` smoke run on the disposable minikube profile; the next benchmark work is expanding that into a fuller local baseline set.
 
 ## Cache Modes
 
@@ -112,5 +113,5 @@ Artifacts now carry `source_kind` so replay outputs cannot be confused with live
   - still uses a scenario-scoped temp `K9S_CONFIG_DIR`
 
 Use `user-home` on machines where auth helpers require the real home directory.
-For local minikube benchmarking, `isolated` remains the preferred default unless an
-auth helper forces `user-home`.
+For local minikube benchmarking on this machine, `isolated` remains the preferred
+default unless an auth helper forces `user-home`.

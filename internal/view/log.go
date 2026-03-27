@@ -260,6 +260,7 @@ func (l *Log) getContext() context.Context {
 
 // Start runs the component.
 func (l *Log) Start() {
+	l.app.ensureComponentTrace(l)
 	l.model.Start(l.getContext())
 	l.model.AddListener(l)
 	l.app.Styles.AddListener(l)

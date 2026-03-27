@@ -197,6 +197,7 @@ func (d *Details) Name() string { return d.title }
 
 // Start starts the view updater.
 func (d *Details) Start() {
+	d.app.ensureComponentTrace(d)
 	if trace := d.app.perfTrace(); trace != nil && len(d.model.Peek()) > 0 {
 		trace.MarkViewOnce(d.viewSeq, perftrace.MarkerDetailContentReady, perftrace.Event{
 			DetailKind: d.DetailKind(),

@@ -28,6 +28,7 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRecordAfterDrawMarksFirstUsefulRowAfterFirstRender(t *testing.T) {
@@ -98,6 +99,69 @@ func TestMarkDetailOpenStartEmitsActionBoundaryMarker(t *testing.T) {
 	assert.Equal(t, perftrace.MarkerDetailOpenStart, events[0].Marker)
 	assert.Equal(t, "logs", events[0].DetailKind)
 	assert.Equal(t, "big/pod-a", events[0].Path)
+}
+
+func TestEnsureComponentTraceActivatesZeroSeqComponent(t *testing.T) {
+	tracePath := filepath.Join(t.TempDir(), "trace.jsonl")
+	trace, err := perftrace.NewSession(perftrace.Options{File: tracePath})
+	require.NoError(t, err)
+
+	flags := genericclioptions.NewConfigFlags(false)
+	kcfg := client.NewConfig(flags)
+	kcfg.SetPerfTrace(trace)
+
+	cfg := mock.NewMockConfig(t)
+	cfg.SetConnection(traceConnection{cfg: kcfg})
+
+	app := NewApp(cfg)
+	component := &traceTestComponent{
+		Box: tview.NewBox(),
+		meta: perftrace.Event{
+			ViewName:  "Pod",
+			GVR:       "v1/pods",
+			Namespace: "big",
+			Path:      "big/pod-a",
+		},
+	}
+
+	tc := app.ensureComponentTrace(component)
+	require.NotNil(t, tc)
+	require.NotZero(t, tc.ViewSeq())
+	require.NoError(t, trace.Close(nil))
+
+	events := readTraceEvents(t, tracePath)
+	markers := lifecycleMarkers(events)
+	require.Equal(t, []string{perftrace.MarkerViewActivate}, markers)
+}
+
+func TestBrowserBeginFilteringMarksFilterStartOnce(t *testing.T) {
+	tracePath := filepath.Join(t.TempDir(), "trace.jsonl")
+	trace, err := perftrace.NewSession(perftrace.Options{File: tracePath})
+	require.NoError(t, err)
+
+	flags := genericclioptions.NewConfigFlags(false)
+	kcfg := client.NewConfig(flags)
+	kcfg.SetPerfTrace(trace)
+
+	cfg := mock.NewMockConfig(t)
+	cfg.SetConnection(traceConnection{cfg: kcfg})
+
+	app := NewApp(cfg)
+	browser := &Browser{Table: NewTable(client.PodGVR)}
+	browser.app = app
+	browser.meta = &metav1.APIResource{Kind: "Pod"}
+	require.NotNil(t, app.ensureComponentTrace(browser))
+
+	browser.beginFiltering("api|worker")
+	browser.beginFiltering("api|worker")
+	require.True(t, browser.consumeFiltering())
+	require.False(t, browser.consumeFiltering())
+	require.NoError(t, trace.Close(nil))
+
+	events := readTraceEvents(t, tracePath)
+	markers := lifecycleMarkers(events)
+	require.Equal(t, []string{perftrace.MarkerViewActivate, perftrace.MarkerFilterStart}, markers)
+	assert.Equal(t, "api|worker", events[1].FilterText)
 }
 
 type traceConnection struct {

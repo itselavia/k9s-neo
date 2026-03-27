@@ -9,12 +9,31 @@ This step exists to turn the current benchmark infrastructure into a real
 before-and-after engineering loop without taking risk on real clusters while the
 fork is still mutation-capable.
 
+## Current Status
+
+Step 6 has started in this branch.
+
+What is already proven locally:
+
+- the disposable local-cluster path works on this machine
+- the working bring-up path is `colima` plus `minikube --driver=docker`
+- the benchmark namespace can be seeded locally
+- the live PTY harness can launch the real K9s Neo binary with a controlling TTY
+- `pods_startup` has completed successfully with lifecycle markers and raw artifacts
+
+What remains for Step 6:
+
+- widen the local baseline to the other primary scenarios
+- capture a stable local baseline set rather than a single smoke run
+- use that baseline as the control for the first shallow product changes
+
 ## Environment Decision
 
 The baseline environment for Step 6 is:
 
 - `minikube` for the local cluster
-- `vfkit` as the preferred macOS VM driver
+- `colima` as the user-scoped local VM and Docker runtime
+- `minikube --driver=docker` as the working bring-up path on this machine
 - a disposable profile dedicated to K9s Neo benchmarking
 - namespace-scoped benchmarks first
 
@@ -27,7 +46,7 @@ Use these as the primary external references for the local lab:
 
 - [Install kubectl on macOS](https://kubernetes.io/docs/tasks/tools/install-kubectl-macos/)
 - [minikube drivers](https://minikube.sigs.k8s.io/docs/drivers/)
-- [minikube vfkit driver](https://minikube.sigs.k8s.io/docs/drivers/vfkit/)
+- [Colima installation](https://colima.run/docs/installation/)
 - [Agones on minikube](https://agones.dev/site/docs/installation/creating-cluster/minikube/)
 
 ## Local Constraints
@@ -76,11 +95,14 @@ Install only the tooling required for the local lab:
 
 - `kubectl`
 - `minikube`
-- `vfkit`
-- `vmnet-helper` only if we later need a multi-node profile
+- `colima`
+- `lima`
+- Docker CLI
+
+Do not install Docker Desktop.
+Do not add privileged networking helpers just to make direct `vfkit` work.
 
 Keep the install boring and reversible.
-Do not add Docker Desktop unless the preferred path fails badly.
 
 ### Phase 1: Disposable Cluster Bring-Up
 
@@ -155,6 +177,9 @@ we accept it as real progress.
 Gate A:
 Local cluster is running and the harness completes at least one live scenario.
 
+Status:
+Met locally on this machine via `pods_startup`.
+
 Gate B:
 Seeded data is rich enough to make the primary scenarios meaningful.
 
@@ -193,3 +218,4 @@ At the end of Step 6 we should be able to say:
 - the live benchmark harness works end to end against a real local Kubernetes API
 - we have the first comparable live baseline for K9s Neo
 - the next shallow product change can be measured immediately on the same machine
+- the local lab is reproducible from repo-owned scripts on this machine

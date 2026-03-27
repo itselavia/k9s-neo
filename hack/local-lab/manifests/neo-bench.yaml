@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-bench
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-api
+  namespace: neo-bench
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: bench-api
+  template:
+    metadata:
+      labels:
+        app: bench-api
+    spec:
+      containers:
+        - name: api
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              i=0
+              while true; do
+                echo "api heartbeat ${i}"
+                i=$((i + 1))
+                sleep 2
+              done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-worker
+  namespace: neo-bench
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: bench-worker
+  template:
+    metadata:
+      labels:
+        app: bench-worker
+    spec:
+      containers:
+        - name: worker
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              i=0
+              while true; do
+                echo "worker tick ${i}"
+                i=$((i + 1))
+                sleep 3
+              done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-indexer
+  namespace: neo-bench
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bench-indexer
+  template:
+    metadata:
+      labels:
+        app: bench-indexer
+    spec:
+      containers:
+        - name: indexer
+          image: busybox:1.36
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              i=0
+              while true; do
+                echo "indexer pulse ${i}"
+                i=$((i + 1))
+                sleep 5
+              done

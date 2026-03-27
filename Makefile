@@ -27,6 +27,21 @@ bench-replay-validate:   ## Run replay-only harness validation
 	@python3 -m unittest discover -s hack/bench/tests
 	@python3 hack/bench/replay.py --fixtures hack/bench/fixtures/replay --label replay-validation
 
+local-lab-install:       ## Install kubectl, minikube, colima, lima, and docker CLI into the user-scoped local lab
+	@bash hack/local-lab/install-tools.sh
+
+local-lab-start:         ## Start the disposable local colima + minikube profile
+	@bash hack/local-lab/start-cluster.sh
+
+local-lab-seed:          ## Seed the local benchmark namespace and workloads
+	@bash hack/local-lab/seed-bench.sh
+
+local-lab-write-vars:    ## Write hack/bench/vars.local.json for the disposable local profile
+	@bash hack/local-lab/write-vars.sh
+
+local-lab-delete:        ## Delete the disposable local colima + minikube profile
+	@bash hack/local-lab/delete-cluster.sh
+
 cover:                   ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out
