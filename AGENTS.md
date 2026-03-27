@@ -11,6 +11,7 @@ Current accepted product contracts:
 - `docs/adr/0003-performance-trace-schema.md`
 - `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
 - `docs/adr/0005-replay-only-local-validation.md`
+- `docs/adr/0006-local-disposable-cluster-baseline.md`
 
 ## Mission
 
@@ -141,13 +142,15 @@ TTY scraping is secondary validation only.
 
 Current intended workflow:
 
-- personal machine: local development, instrumentation, unit tests, fake-client tests, replay fixtures, harness work, docs
-- work machine: real-cluster benchmarking and final proof
+- personal machine: local development, instrumentation, unit tests, replay fixtures,
+  disposable local-cluster benchmarking, harness work, and docs
+- work machine: optional later validation only if local evidence proves insufficient
 
 Important:
 
 - do not block local development on live-cluster access
 - do not make public performance claims from synthetic-only results
+- do not overgeneralize local disposable-cluster results into production-cluster claims
 
 ## Current Bottleneck Hypotheses
 
@@ -165,7 +168,7 @@ Most likely early wins:
 3. Add performance trace schema and request-level instrumentation.
 4. Add lifecycle markers and the rerunnable benchmark harness.
 5. Validate the harness locally with replay fixtures.
-6. Capture real baseline on the work machine.
+6. Capture the first live baseline on a disposable local cluster.
 7. Land shallow, high-confidence wins one by one:
    - lazy metrics by default
    - disable node pod counting by default
@@ -183,7 +186,7 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. capture the real baseline on the work machine
+1. stand up a disposable local minikube cluster and capture the first live baseline
 2. begin measuring shallow, high-confidence changes one by one
 3. keep deeper data-path work blocked on benchmark evidence
 4. keep strict read-only hardening separate from benchmark-baseline capture
@@ -210,7 +213,15 @@ Step 5 is complete in this branch:
 - checked-in replay fixtures regenerate the standard artifact layout
 - replay validation is CI-enforced
 - raw live traces are preserved as captured bytes when present
-- local methodology validation is complete; real benchmark evidence still requires the work machine
+- local methodology validation is complete; the next step is local disposable-cluster live measurement
+
+Step 6 decision is now fixed in this branch:
+
+- the primary live benchmark environment is a disposable local minikube cluster
+- `vfkit` is the preferred macOS Apple Silicon driver
+- single-node, namespace-scoped baseline work comes first
+- multi-node local testing is optional later for targeted node-path scenarios
+- real-cluster validation is optional later work, not the default next step
 
 Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 

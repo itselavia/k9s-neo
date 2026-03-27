@@ -72,5 +72,6 @@ Negative:
 
 - Replay-only local validation remains a separate step under ADR 0005.
 - Synthetic API smoke remains explicitly deferred unless replay-only validation proves insufficient.
-- Real-cluster benchmark baselines remain a work-machine step.
+- Local disposable-cluster live baselines are defined separately under ADR 0006.
+- Real-cluster validation is optional later work rather than the default next step.
 - Any public benchmark claims remain blocked on sanitized live-cluster results.

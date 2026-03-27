@@ -5,7 +5,9 @@
 
 ## Context
 
-Step 4 established a live PTY benchmark harness and benchmark-grade lifecycle markers, but this personal development machine does not have cluster access. We still need a local way to validate the harness, artifact generation, and summary math before moving to real-cluster baselines.
+Step 4 established a live PTY benchmark harness and benchmark-grade lifecycle markers,
+but we still needed a local way to validate the harness, artifact generation, and
+summary math before moving to live disposable-cluster baselines.
 
 The original Step 5 space included both replay fixtures and a possible synthetic API server. A synthetic server would add more code surface and more fake-Kubernetes maintenance burden than we need right now.
 
@@ -16,7 +18,8 @@ Step 5 uses replay fixtures only.
 - checked-in replay fixtures are the only required local validation mechanism
 - replay artifacts validate harness correctness, not Kubernetes behavior or performance
 - synthetic server work is explicitly deferred
-- only `live` results from the work machine may support benchmark claims
+- only `live` results may support benchmark claims, and they must be described with
+  their actual environment
 - replay fixtures must be synthetic or sanitized and small enough to review comfortably
 
 Replay validation must exercise:
@@ -45,4 +48,5 @@ Negative:
 
 - Whether a tiny synthetic API smoke path is worth adding later.
 - Whether replay validation should eventually move into `make test` instead of its own CI step.
-- How much sanitized live-cluster raw data should be checked in after Step 6.
+- How much sanitized local-live or later remote-live raw data should be checked in
+  after Step 6.

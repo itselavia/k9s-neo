@@ -17,7 +17,7 @@ This branch is the instrumented baseline and benchmark-prep branch.
 - No live-cluster benchmark claims exist yet.
 - The current branch is not yet strictly read-only by construction.
 - Agones is in the product contract, but explicit Agones support has not landed in code yet.
-- The next major step is capturing the real baseline on the work machine.
+- The next major step is capturing the first live baseline on a disposable local minikube cluster.
 
 ## What This Repo Is Trying To Prove
 
@@ -40,6 +40,7 @@ The authoritative project contracts live in `docs/adr/`:
 - `docs/adr/0003-performance-trace-schema.md`
 - `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
 - `docs/adr/0005-replay-only-local-validation.md`
+- `docs/adr/0006-local-disposable-cluster-baseline.md`
 
 Repo-local project memory for future Codex threads lives in `AGENTS.md`.
 
@@ -75,6 +76,7 @@ More local setup detail lives in:
 
 - `docs/development/local-toolchain.md`
 - `docs/development/step-1-baseline.md`
+- `docs/development/step-6-local-baseline-plan.md`
 
 ## Benchmarking And Evidence Boundaries
 
@@ -83,7 +85,9 @@ Benchmark plumbing lives under `hack/bench/`.
 - `run.py` is the live benchmark entrypoint and the only path intended for real benchmark evidence.
 - `replay.py` is validation-only and produces `source_kind=replay` artifacts.
 - Replay results are never performance claims.
-- Public benchmark claims stay blocked until sanitized live-cluster results exist.
+- The immediate next live environment is a disposable local minikube cluster rather than a real work cluster.
+- Local live results are valid for comparative engineering decisions on this repo, but they must be described honestly as local-cluster results.
+- Public benchmark claims stay blocked until sanitized live results exist and the environment is stated clearly.
 
 ## Important Honesty Notes
 

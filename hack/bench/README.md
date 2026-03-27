@@ -9,7 +9,7 @@ This directory contains the rerunnable external benchmark harness for Step 4.
 - `replay.py`: replay-fixture validation entrypoint
 - `fixtures/replay/`: checked-in replay fixtures for Step 5 validation
 - `scenarios.json`: checked-in scenario manifest
-- `vars.example.json`: template for local machine or work machine inputs
+- `vars.example.json`: template for local machine or later optional validation-machine inputs
 - `tests/`: Python unit tests for live and replay harness behavior
 
 ## Local Setup
@@ -19,6 +19,10 @@ This directory contains the rerunnable external benchmark harness for Step 4.
 3. Keep `vars.local.json` untracked.
 
 Replay validation does not require kubeconfig or cluster access.
+The preferred local live path for this repo is a disposable `minikube` cluster on
+macOS using the `vfkit` driver.
+The current execution plan for that path lives in
+`docs/development/step-6-local-baseline-plan.md`.
 
 ## Usage
 
@@ -94,6 +98,9 @@ Artifacts now carry `source_kind` so replay outputs cannot be confused with live
 - `run.py` produces `source_kind=live` artifacts and is the only path intended for real benchmark evidence.
 - `replay.py` produces `source_kind=replay` artifacts and is validation-only.
 - Replay results are never performance claims.
+- The default next-step live environment is a disposable local cluster, not a real work cluster.
+- Local live results are valid for before-and-after engineering comparisons on the same machine.
+- Local live results should be labeled with their actual environment and should not be presented as production-cluster results by default.
 
 ## Cache Modes
 
@@ -105,3 +112,5 @@ Artifacts now carry `source_kind` so replay outputs cannot be confused with live
   - still uses a scenario-scoped temp `K9S_CONFIG_DIR`
 
 Use `user-home` on machines where auth helpers require the real home directory.
+For local minikube benchmarking, `isolated` remains the preferred default unless an
+auth helper forces `user-home`.
