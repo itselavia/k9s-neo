@@ -39,6 +39,12 @@ local-lab-seed:          ## Seed the local benchmark namespace and workloads
 local-lab-write-vars:    ## Write hack/bench/vars.local.json for the disposable local profile
 	@bash hack/local-lab/write-vars.sh
 
+local-lab-smoke-required: ## Run the required Step 6 scenarios once cold and once warm
+	@bash hack/local-lab/smoke-required.sh
+
+local-lab-capture-baseline: ## Run the required Step 6 scenarios with baseline counts and write the baseline note
+	@bash hack/local-lab/capture-baseline.sh
+
 local-lab-delete:        ## Delete the disposable local colima + minikube profile
 	@bash hack/local-lab/delete-cluster.sh
 

@@ -12,6 +12,9 @@ Current accepted product contracts:
 - `docs/adr/0004-lifecycle-markers-and-benchmark-harness.md`
 - `docs/adr/0005-replay-only-local-validation.md`
 - `docs/adr/0006-local-disposable-cluster-baseline.md`
+- `docs/development/step-6-closeout-step-7-entry-checklist.md`
+- `docs/development/step-6-local-baseline-note.md`
+- `docs/development/step-6-local-decision-matrix.md`
 
 ## Mission
 
@@ -186,11 +189,12 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. broaden the local live baseline beyond `pods_startup` to `pods_filter_settle`, `nodes_first_render`, `pod_yaml`, and `pod_describe`
-2. capture a stable local baseline set with raw artifacts and summary output
-3. begin measuring shallow, high-confidence changes one by one on the same local setup
-4. keep deeper data-path work blocked on benchmark evidence
-5. keep strict read-only hardening separate from benchmark-baseline capture
+1. use `docs/development/step-6-closeout-step-7-entry-checklist.md` and `docs/development/step-6-local-decision-matrix.md` as the control documents for the next thread
+2. begin measuring shallow changes one by one against the captured local baseline
+3. on this local lab, prioritize discovery narrowing and auth fan-out reduction first because they are directly visible in the current traces
+4. treat lazy metrics as still important, but not yet directly measurable on this cluster because no metrics API is present
+5. keep deeper data-path work blocked on benchmark evidence
+6. keep strict read-only hardening separate from benchmark-baseline capture
 
 Step 4 is complete in this branch:
 
@@ -229,8 +233,13 @@ Step 6 progress in this branch:
 - the user-scoped local lab scripts install and manage the disposable cluster
 - the working local bring-up path is proven end to end on this machine
 - the live PTY harness now drives a real K9s Neo session locally with a controlling TTY
-- `pods_startup` completes successfully against the local minikube profile with lifecycle markers and raw artifacts
-- the next Step 6 work is widening the baseline scenario set, not re-solving cluster bootstrap
+- the required scenario set completes successfully on this machine:
+  - `pods_startup`
+  - `pods_filter_settle`
+  - `nodes_first_render`
+  - `pod_yaml`
+  - `pod_describe`
+- the first stable local baseline now exists with raw artifacts, a repo-tracked baseline note, and a seeded decision matrix
 
 Do not jump ahead to broad feature removals before Step 5 local validation and the first real baseline run exist.
 

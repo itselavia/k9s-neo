@@ -5,6 +5,10 @@
 Establish the first live benchmark baseline for K9s Neo on this personal machine
 using a disposable local Kubernetes cluster.
 
+The execution companion for this plan is:
+
+- `docs/development/step-6-closeout-step-7-entry-checklist.md`
+
 This step exists to turn the current benchmark infrastructure into a real
 before-and-after engineering loop without taking risk on real clusters while the
 fork is still mutation-capable.
@@ -48,6 +52,12 @@ Use these as the primary external references for the local lab:
 - [minikube drivers](https://minikube.sigs.k8s.io/docs/drivers/)
 - [Colima installation](https://colima.run/docs/installation/)
 - [Agones on minikube](https://agones.dev/site/docs/installation/creating-cluster/minikube/)
+
+Use these as the primary repo-owned references for execution:
+
+- `hack/local-lab/README.md`
+- `hack/local-lab/smoke-required.sh`
+- `hack/local-lab/capture-baseline.sh`
 
 ## Local Constraints
 
@@ -149,6 +159,10 @@ Run the benchmark harness against the disposable local cluster and collect:
 - raw JSON artifacts
 - CSV summary
 - markdown report
+
+The preferred repo-owned entrypoint for this phase is:
+
+- `hack/local-lab/capture-baseline.sh`
 
 The report must say clearly that the environment is local minikube on this machine.
 

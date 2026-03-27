@@ -14,11 +14,11 @@ high-cardinality SRE workflows.
 This branch is the instrumented baseline and benchmark-prep branch.
 
 - Steps 1-5 are complete: baseline build, ADRs, transport tracing, lifecycle markers, live benchmark harness, and replay-only local validation.
-- Step 6 has started locally: the disposable local cluster path is working, and `pods_startup` has completed successfully against a real local minikube profile on this machine.
+- Step 6 now has a stable local baseline on this machine for `pods_startup`, `pods_filter_settle`, `nodes_first_render`, `pod_yaml`, and `pod_describe`.
 - No live-cluster benchmark claims exist yet.
 - The current branch is not yet strictly read-only by construction.
 - Agones is in the product contract, but explicit Agones support has not landed in code yet.
-- The next major step is broadening the local live baseline beyond `pods_startup` and then measuring shallow wins one by one on the same setup.
+- The next major step is measuring shallow wins one by one against that captured local baseline.
 
 ## What This Repo Is Trying To Prove
 
@@ -78,6 +78,10 @@ More local setup detail lives in:
 - `docs/development/local-toolchain.md`
 - `docs/development/step-1-baseline.md`
 - `docs/development/step-6-local-baseline-plan.md`
+- `docs/development/step-6-closeout-step-7-entry-checklist.md`
+- `docs/development/step-6-local-baseline-note.md`
+- `docs/development/step-6-local-decision-matrix.md`
+- `hack/local-lab/README.md`
 
 ## Benchmarking And Evidence Boundaries
 
