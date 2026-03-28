@@ -41,3 +41,27 @@ func TestConfigSetPerfTraceAndRESTConfigFor(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, proxyURL.String(), gotURL.String())
 }
+
+func TestConfigSetSkipCRDAugment(t *testing.T) {
+	flags := genericclioptions.ConfigFlags{
+		KubeConfig: &kubeConfig,
+	}
+
+	cfg := client.NewConfig(&flags)
+	assert.False(t, cfg.SkipCRDAugment())
+
+	cfg.SetSkipCRDAugment(true)
+	assert.True(t, cfg.SkipCRDAugment())
+}
+
+func TestConfigSetStaticCoreRegistry(t *testing.T) {
+	flags := genericclioptions.ConfigFlags{
+		KubeConfig: &kubeConfig,
+	}
+
+	cfg := client.NewConfig(&flags)
+	assert.False(t, cfg.StaticCoreRegistry())
+
+	cfg.SetStaticCoreRegistry(true)
+	assert.True(t, cfg.StaticCoreRegistry())
+}

@@ -35,12 +35,15 @@ const (
 var _ data.KubeSettings = (*client.Config)(nil)
 
 var (
-	version, commit, date = "dev", "dev", client.NA
-	k9sFlags              *config.Flags
-	k8sFlags              *genericclioptions.ConfigFlags
-	perfTraceFile         string
-	perfTraceScenario     string
-	perfTraceRunID        string
+	version, commit, date       = "dev", "dev", client.NA
+	k9sFlags                    *config.Flags
+	k8sFlags                    *genericclioptions.ConfigFlags
+	perfTraceFile               string
+	perfTraceScenario           string
+	perfTraceRunID              string
+	perfSkipCRDAugment          bool
+	perfStaticCoreRegistry      bool
+	perfSkipNamespaceValidation bool
 
 	rootCmd = &cobra.Command{
 		Use:   appName,
@@ -158,7 +161,10 @@ func loadConfiguration(trace *perftrace.Session) (*config.Config, error) {
 
 	k8sCfg := client.NewConfig(k8sFlags)
 	k8sCfg.SetPerfTrace(trace)
+	k8sCfg.SetSkipCRDAugment(perfSkipCRDAugment)
+	k8sCfg.SetStaticCoreRegistry(perfStaticCoreRegistry)
 	k9sCfg := config.NewConfig(k8sCfg)
+	k9sCfg.SetSkipNamespaceValidation(perfSkipNamespaceValidation)
 	var errs error
 
 	if trace != nil {
@@ -297,9 +303,15 @@ func initK9sFlags() {
 	rootCmd.Flags().StringVar(&perfTraceFile, "perf-trace-file", "", "Writes internal perf trace JSONL output to the given file")
 	rootCmd.Flags().StringVar(&perfTraceScenario, "perf-trace-scenario", "", "Annotates the internal perf trace with a scenario label")
 	rootCmd.Flags().StringVar(&perfTraceRunID, "perf-trace-run-id", "", "Annotates the internal perf trace with a run identifier")
+	rootCmd.Flags().BoolVar(&perfSkipCRDAugment, "perf-skip-crd-augment", false, "Skips CRD augmentation on the startup path")
+	rootCmd.Flags().BoolVar(&perfStaticCoreRegistry, "perf-static-core-registry", false, "Uses a curated static startup registry on the startup path")
+	rootCmd.Flags().BoolVar(&perfSkipNamespaceValidation, "perf-skip-namespace-validation", false, "Skips namespace validation on the startup path")
 	_ = rootCmd.Flags().MarkHidden("perf-trace-file")
 	_ = rootCmd.Flags().MarkHidden("perf-trace-scenario")
 	_ = rootCmd.Flags().MarkHidden("perf-trace-run-id")
+	_ = rootCmd.Flags().MarkHidden("perf-skip-crd-augment")
+	_ = rootCmd.Flags().MarkHidden("perf-static-core-registry")
+	_ = rootCmd.Flags().MarkHidden("perf-skip-namespace-validation")
 }
 
 func initK8sFlags() {

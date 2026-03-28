@@ -61,46 +61,70 @@ func ShouldAddSuggest(command, suggest string) (string, bool) {
 	return "", false
 }
 
-// SuggestSubCommand suggests namespaces or contexts based on current command.
-func SuggestSubCommand(command string, namespaces client.NamespaceNames, contexts []string) []string {
+// ContextSuggestionArg returns the context token currently being completed.
+func ContextSuggestionArg(command string) (string, bool) {
 	p := NewInterpreter(command)
-	var suggests []string
-	switch {
-	case p.IsCowCmd(), p.IsHelpCmd(), p.IsAliasCmd(), p.IsBailCmd(), p.IsDirCmd():
-		return nil
+	return p.ContextArg()
+}
 
+// NamespaceSuggestionArg returns the namespace token currently being completed.
+func NamespaceSuggestionArg(command string) (string, bool) {
+	p := NewInterpreter(command)
+	switch {
+	case p.IsCowCmd(), p.IsHelpCmd(), p.IsAliasCmd(), p.IsBailCmd(), p.IsDirCmd(), p.IsContextCmd():
+		return "", false
 	case p.IsXrayCmd():
 		_, ns, ok := p.XrayArgs()
 		if !ok || ns == "" {
-			return nil
+			return "", false
 		}
-		suggests = completeNS(ns, namespaces)
-
-	case p.IsContextCmd():
-		n, ok := p.ContextArg()
-		if !ok {
-			return nil
-		}
-		suggests = completeCtx(command, n, contexts)
-
+		return ns, true
 	case p.HasNS():
-		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
+		if _, ok := p.HasContext(); ok {
+			return "", false
 		}
-		if len(suggests) > 0 {
-			break
-		}
-
-		ns, ok := p.NSArg()
-		if !ok {
-			return nil
-		}
-		suggests = completeNS(ns, namespaces)
-
+		return p.NSArg()
 	default:
-		if n, ok := p.HasContext(); ok {
-			suggests = completeCtx(command, n, contexts)
-		}
+		return "", false
+	}
+}
+
+// ShouldSuggestNamespace reports whether namespace completion should fetch namespace names.
+func ShouldSuggestNamespace(command, activeNamespace string) bool {
+	ns, ok := NamespaceSuggestionArg(command)
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(activeNamespace) != ns
+}
+
+// SuggestContextSuggestions returns context completions for the current command.
+func SuggestContextSuggestions(command string, contexts []string) []string {
+	n, ok := ContextSuggestionArg(command)
+	if !ok {
+		return nil
+	}
+
+	return completeCtx(command, n, contexts)
+}
+
+// SuggestNamespaceSuggestions returns namespace completions for the current command.
+func SuggestNamespaceSuggestions(command string, namespaces client.NamespaceNames) []string {
+	n, ok := NamespaceSuggestionArg(command)
+	if !ok {
+		return nil
+	}
+
+	return completeNS(n, namespaces)
+}
+
+// SuggestSubCommand suggests namespaces or contexts based on current command.
+func SuggestSubCommand(command string, namespaces client.NamespaceNames, contexts []string) []string {
+	var suggests []string
+	suggests = SuggestContextSuggestions(command, contexts)
+	if len(suggests) == 0 {
+		suggests = SuggestNamespaceSuggestions(command, namespaces)
 	}
 	slices.Sort(suggests)
 

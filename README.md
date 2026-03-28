@@ -15,10 +15,11 @@ This branch is the instrumented baseline and benchmark-prep branch.
 
 - Steps 1-5 are complete: baseline build, ADRs, transport tracing, lifecycle markers, live benchmark harness, and replay-only local validation.
 - Step 6 now has a stable local baseline on this machine for `pods_startup`, `pods_filter_settle`, `nodes_first_render`, `pod_yaml`, and `pod_describe`.
+- Step 7A now has a measured local result behind hidden runtime flags: small discovery cuts improved local startup-path medians by about `8-10%`, but discovery is still the next major optimization target.
 - No live-cluster benchmark claims exist yet.
 - The current branch is not yet strictly read-only by construction.
 - Agones is in the product contract, but explicit Agones support has not landed in code yet.
-- The next major step is measuring shallow wins one by one against that captured local baseline.
+- The next major step is measuring shallow wins one by one against that captured local baseline, starting with discovery narrowing rather than modest RBAC preflight cleanup.
 
 ## What This Repo Is Trying To Prove
 
@@ -81,6 +82,8 @@ More local setup detail lives in:
 - `docs/development/step-6-closeout-step-7-entry-checklist.md`
 - `docs/development/step-6-local-baseline-note.md`
 - `docs/development/step-6-local-decision-matrix.md`
+- `docs/development/step-7-plan.md`
+- `docs/development/step-7a-small-discovery-cuts-note.md`
 - `hack/local-lab/README.md`
 
 ## Benchmarking And Evidence Boundaries

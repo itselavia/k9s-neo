@@ -186,10 +186,11 @@ control table.
 
 ### Initial Candidate Order
 
-1. lazy metrics by default
-2. disable node pod counting by default
-3. narrow discovery with static core aliases plus Agones allowlist
-4. strict read-only hardening
+1. small discovery cuts first
+2. static core aliases plus Agones allowlist if discovery is still dominant after the small cuts
+3. disable node pod counting by default
+4. decide later whether local metrics are needed to measure lazy metrics on this machine
+5. strict read-only hardening as a separate safety track
 
 Do not reorder this list on intuition alone after the baseline exists. Reorder it
 only when the measured baseline points somewhere else.

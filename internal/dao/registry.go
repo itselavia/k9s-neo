@@ -171,6 +171,13 @@ func (m *Meta) LoadResources(f Factory) error {
 	}
 
 	m.resMetas.clear()
+	if shouldUseStaticCoreRegistry(f) {
+		loadStaticCoreResources(m.resMetas)
+		loadStaticAgonesAllowlist(m.resMetas)
+		loadNonResource(m.resMetas)
+
+		return nil
+	}
 	if err := loadPreferred(f, m.resMetas); err != nil {
 		return err
 	}
@@ -178,9 +185,43 @@ func (m *Meta) LoadResources(f Factory) error {
 
 	// We've actually loaded all the CRDs in loadPreferred, and we're now adding
 	// some additional CRD properties on top of that.
-	loadCRDs(f, m.resMetas)
+	if shouldAugmentCRDs(f) {
+		loadCRDs(f, m.resMetas)
+	}
 
 	return nil
+}
+
+func shouldAugmentCRDs(f Factory) bool {
+	if f == nil || f.Client() == nil {
+		return true
+	}
+
+	return shouldAugmentCRDsForConfig(f.Client().Config())
+}
+
+func shouldUseStaticCoreRegistry(f Factory) bool {
+	if f == nil || f.Client() == nil {
+		return false
+	}
+
+	return shouldUseStaticCoreRegistryForConfig(f.Client().Config())
+}
+
+func shouldUseStaticCoreRegistryForConfig(cfg *client.Config) bool {
+	if cfg == nil {
+		return false
+	}
+
+	return cfg.StaticCoreRegistry()
+}
+
+func shouldAugmentCRDsForConfig(cfg *client.Config) bool {
+	if cfg == nil {
+		return true
+	}
+
+	return !cfg.SkipCRDAugment()
 }
 
 // BOZO!! Need countermeasures for direct commands!

@@ -69,6 +69,15 @@ func (c *Context) GetClusterName() string {
 
 // Validate ensures a context config is tip top.
 func (c *Context) Validate(conn client.Connection, _, clusterName string) {
+	c.validate(conn, clusterName, true)
+}
+
+// ValidateWithoutNamespace ensures a context config is tip top without namespace checks.
+func (c *Context) ValidateWithoutNamespace(conn client.Connection, _, clusterName string) {
+	c.validate(conn, clusterName, false)
+}
+
+func (c *Context) validate(conn client.Connection, clusterName string, validateNamespace bool) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
@@ -80,7 +89,9 @@ func (c *Context) Validate(conn client.Connection, _, clusterName string) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}
-	c.Namespace.Validate(conn)
+	if validateNamespace {
+		c.Namespace.Validate(conn)
+	}
 
 	if c.View == nil {
 		c.View = NewView()

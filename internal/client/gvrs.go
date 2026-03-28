@@ -33,6 +33,12 @@ var (
 	CjGVR  = NewGVR("batch/v1/cronjobs")
 	JobGVR = NewGVR("batch/v1/jobs")
 
+	// Agones...
+	GameServerGVR           = NewGVR("agones.dev/v1/gameservers")
+	FleetGVR                = NewGVR("agones.dev/v1/fleets")
+	GameServerAllocationGVR = NewGVR("allocation.agones.dev/v1/gameserverallocations")
+	FleetAutoscalerGVR      = NewGVR("autoscaling.agones.dev/v1/fleetautoscalers")
+
 	// Misc...
 	CrdGVR = NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")
 	PcGVR  = NewGVR("scheduling.k8s.io/v1/priorityclasses")
@@ -48,6 +54,12 @@ var (
 	// Metrics...
 	NmxGVR = NewGVR("metrics.k8s.io/v1beta1/nodes")
 	PmxGVR = NewGVR("metrics.k8s.io/v1beta1/pods")
+
+	// Agones compatibility aliases.
+	GsGVR  = GameServerGVR
+	FltGVR = FleetGVR
+	GsaGVR = GameServerAllocationGVR
+	FasGVR = FleetAutoscalerGVR
 
 	// K9s...
 	CpuGVR = NewGVR("cpu")

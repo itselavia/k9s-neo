@@ -20,7 +20,14 @@ import (
 )
 
 func TestPerfTraceFlagsAreHidden(t *testing.T) {
-	for _, name := range []string{"perf-trace-file", "perf-trace-scenario", "perf-trace-run-id"} {
+	for _, name := range []string{
+		"perf-trace-file",
+		"perf-trace-scenario",
+		"perf-trace-run-id",
+		"perf-skip-crd-augment",
+		"perf-static-core-registry",
+		"perf-skip-namespace-validation",
+	} {
 		flag := rootCmd.Flags().Lookup(name)
 		require.NotNil(t, flag)
 		assert.True(t, flag.Hidden)

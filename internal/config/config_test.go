@@ -247,6 +247,31 @@ func TestFavNamespaces(t *testing.T) {
 	}
 }
 
+func TestFavNamespacesSkipNamespaceValidation(t *testing.T) {
+	cfg := mock.NewMockConfig(t)
+	_, _ = cfg.K9s.ActivateContext("ct-1-1")
+
+	conn := &countingConnection{}
+	cfg.SetConnection(conn)
+	cfg.SetSkipNamespaceValidation(true)
+
+	assert.Equal(t, []string{client.DefaultNamespace}, cfg.FavNamespaces())
+	assert.Equal(t, 0, conn.calls)
+	assert.True(t, cfg.SkipNamespaceValidation())
+}
+
+func TestValidateSkipNamespaceValidation(t *testing.T) {
+	cfg := mock.NewMockConfig(t)
+	_, _ = cfg.K9s.ActivateContext("ct-1-1")
+
+	conn := &countingConnection{}
+	cfg.SetConnection(conn)
+	cfg.SetSkipNamespaceValidation(true)
+
+	cfg.Validate("ct-1-1", "cl-1")
+	assert.Equal(t, 0, conn.calls)
+}
+
 func TestContextAliasesPath(t *testing.T) {
 	uu := map[string]struct {
 		ct string
@@ -270,6 +295,16 @@ func TestContextAliasesPath(t *testing.T) {
 			assert.Equal(t, u.e, c.ContextAliasesPath())
 		})
 	}
+}
+
+type countingConnection struct {
+	client.Connection
+	calls int
+}
+
+func (c *countingConnection) IsValidNamespace(string) bool {
+	c.calls++
+	return true
 }
 
 func TestContextPluginsPath(t *testing.T) {

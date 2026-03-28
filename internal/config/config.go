@@ -25,6 +25,7 @@ type Config struct {
 	K9s      *K9s `yaml:"k9s" json:"k9s"`
 	conn     client.Connection
 	settings data.KubeSettings
+	skipNamespaceValidation bool
 }
 
 // NewConfig creates a new default config.
@@ -176,9 +177,27 @@ func (c *Config) FavNamespaces() []string {
 	if err != nil {
 		return nil
 	}
-	ct.Validate(c.conn, c.K9s.getActiveContextName(), ct.ClusterName)
+	if !c.skipNamespaceValidation {
+		ct.Validate(c.conn, c.K9s.getActiveContextName(), ct.ClusterName)
+	}
+	if ct.Namespace == nil {
+		return nil
+	}
 
 	return ct.Namespace.Favorites
+}
+
+// SetSkipNamespaceValidation toggles runtime-only namespace validation.
+func (c *Config) SetSkipNamespaceValidation(skip bool) {
+	c.skipNamespaceValidation = skip
+	if c.K9s != nil {
+		c.K9s.setSkipNamespaceValidation(skip)
+	}
+}
+
+// SkipNamespaceValidation reports whether namespace validation is disabled.
+func (c *Config) SkipNamespaceValidation() bool {
+	return c.skipNamespaceValidation
 }
 
 // SetActiveNamespace set the active namespace in the current context.
@@ -317,6 +336,10 @@ func (c *Config) SaveFile(path string) error {
 func (c *Config) Validate(contextName, clusterName string) {
 	if c.K9s == nil {
 		c.K9s = NewK9s(c.conn, c.settings)
+	}
+	if c.skipNamespaceValidation {
+		c.K9s.ValidateWithoutNamespace(c.conn, contextName, clusterName)
+		return
 	}
 	c.K9s.Validate(c.conn, contextName, clusterName)
 }

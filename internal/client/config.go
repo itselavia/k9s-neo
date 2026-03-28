@@ -29,10 +29,12 @@ const (
 
 // Config tracks a kubernetes configuration.
 type Config struct {
-	flags *genericclioptions.ConfigFlags
-	perf  *perftrace.Session
-	mx    sync.RWMutex
-	proxy func(*http.Request) (*url.URL, error)
+	flags              *genericclioptions.ConfigFlags
+	perf               *perftrace.Session
+	skipCRDAugment     bool
+	staticCoreRegistry bool
+	mx                 sync.RWMutex
+	proxy              func(*http.Request) (*url.URL, error)
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
@@ -82,6 +84,26 @@ func (c *Config) SetPerfTrace(p *perftrace.Session) {
 // PerfTrace returns the runtime perf trace session if enabled.
 func (c *Config) PerfTrace() *perftrace.Session {
 	return c.perf
+}
+
+// SetSkipCRDAugment toggles the runtime-only CRD augmentation skip.
+func (c *Config) SetSkipCRDAugment(skip bool) {
+	c.skipCRDAugment = skip
+}
+
+// SkipCRDAugment reports whether CRD augmentation should be skipped.
+func (c *Config) SkipCRDAugment() bool {
+	return c.skipCRDAugment
+}
+
+// SetStaticCoreRegistry toggles the runtime-only static core registry probe.
+func (c *Config) SetStaticCoreRegistry(enabled bool) {
+	c.staticCoreRegistry = enabled
+}
+
+// StaticCoreRegistry reports whether the runtime-only static core registry probe is enabled.
+func (c *Config) StaticCoreRegistry() bool {
+	return c.staticCoreRegistry
 }
 
 func composeWrapTransport(cfg *restclient.Config, wrap func(http.RoundTripper) http.RoundTripper) {

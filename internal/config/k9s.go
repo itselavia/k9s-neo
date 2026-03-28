@@ -63,6 +63,7 @@ type K9s struct {
 	ks                  data.KubeSettings
 	mx                  sync.RWMutex
 	contextSwitch       bool
+	skipNamespaceValidation bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -103,6 +104,20 @@ func (k *K9s) resetConnection(conn client.Connection) {
 	defer k.mx.Unlock()
 
 	k.conn = conn
+}
+
+func (k *K9s) setSkipNamespaceValidation(skip bool) {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
+	k.skipNamespaceValidation = skip
+}
+
+func (k *K9s) shouldSkipNamespaceValidation() bool {
+	k.mx.RLock()
+	defer k.mx.RUnlock()
+
+	return k.skipNamespaceValidation
 }
 
 // Save saves the k9s config to disk.
@@ -422,6 +437,15 @@ func (k *K9s) IsReadOnly() bool {
 
 // Validate the current configuration.
 func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
+	k.validate(c, contextName, clusterName, !k.shouldSkipNamespaceValidation())
+}
+
+// ValidateWithoutNamespace validates the current configuration without namespace checks.
+func (k *K9s) ValidateWithoutNamespace(c client.Connection, contextName, clusterName string) {
+	k.validate(c, contextName, clusterName, false)
+}
+
+func (k *K9s) validate(c client.Connection, contextName, clusterName string, validateNamespace bool) {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
@@ -446,6 +470,10 @@ func (k *K9s) Validate(c client.Connection, contextName, clusterName string) {
 	k.Thresholds = k.Thresholds.Validate()
 
 	if cfg := k.getActiveConfig(); cfg != nil {
-		cfg.Validate(c, contextName, clusterName)
+		if validateNamespace {
+			cfg.Validate(c, contextName, clusterName)
+		} else {
+			cfg.ValidateWithoutNamespace(c, contextName, clusterName)
+		}
 	}
 }

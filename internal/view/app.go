@@ -217,11 +217,15 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			}
 		}
 
-		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
-		if err != nil {
-			slog.Error("Failed to obtain list of namespaces", slogs.Error, err)
+		entries = append(entries, cmd.SuggestContextSuggestions(s, contextNames)...)
+		if a.factory != nil && cmd.ShouldSuggestNamespace(s, a.Config.ActiveNamespace()) {
+			namespaceNames, err := a.factory.Client().ValidNamespaceNames()
+			if err != nil {
+				slog.Error("Failed to obtain list of namespaces", slogs.Error, err)
+			} else {
+				entries = append(entries, cmd.SuggestNamespaceSuggestions(s, namespaceNames)...)
+			}
 		}
-		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}

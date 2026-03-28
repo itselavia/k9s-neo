@@ -15,6 +15,7 @@ Current accepted product contracts:
 - `docs/development/step-6-closeout-step-7-entry-checklist.md`
 - `docs/development/step-6-local-baseline-note.md`
 - `docs/development/step-6-local-decision-matrix.md`
+- `docs/development/step-7-plan.md`
 
 ## Mission
 
@@ -162,7 +163,7 @@ Most likely early wins:
 1. ambient metrics are on startup and list-view hot paths
 2. startup discovery and CRD loading are broader than needed
 3. node views do cluster-wide pod work that may be catastrophic at scale
-4. read preflight auth fan-out adds avoidable latency and failure modes
+4. read-only RBAC preflight fan-out adds avoidable latency and failure modes, but current local evidence says the direct timing win is modest
 
 ## Serialized Roadmap
 
@@ -189,12 +190,19 @@ Most likely early wins:
 
 The next tasks should be:
 
-1. use `docs/development/step-6-closeout-step-7-entry-checklist.md` and `docs/development/step-6-local-decision-matrix.md` as the control documents for the next thread
-2. begin measuring shallow changes one by one against the captured local baseline
-3. on this local lab, prioritize discovery narrowing and auth fan-out reduction first because they are directly visible in the current traces
-4. treat lazy metrics as still important, but not yet directly measurable on this cluster because no metrics API is present
-5. keep deeper data-path work blocked on benchmark evidence
-6. keep strict read-only hardening separate from benchmark-baseline capture
+1. use `docs/development/step-7-plan.md` as the execution order for shallow wins on this machine
+2. treat Step 7A as complete in this worktree:
+   - `--perf-skip-crd-augment`
+   - `--perf-skip-namespace-validation`
+   - measured note: `docs/development/step-7a-small-discovery-cuts-note.md`
+3. start Step 7B next:
+   - static core aliases
+   - explicit Agones allowlist
+   - generic CRDs off the hot path by default
+4. keep read-only RBAC preflight reduction demoted unless discovery wins stall
+5. treat lazy metrics as still important, but not yet directly measurable on this cluster because no metrics API is present
+6. keep deeper data-path work blocked on benchmark evidence
+7. keep strict read-only hardening separate from benchmark-baseline capture
 
 Step 4 is complete in this branch:
 

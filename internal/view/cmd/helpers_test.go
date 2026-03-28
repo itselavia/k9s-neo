@@ -92,3 +92,63 @@ func TestSuggestSubCommand(t *testing.T) {
 		assert.Equal(t, tt.Suggestions, got)
 	}
 }
+
+func TestContextSuggestionArg(t *testing.T) {
+	tests := []struct {
+		command string
+		want    string
+		ok      bool
+	}{
+		{command: "ctx", want: "", ok: true},
+		{command: "ctx p", want: "p", ok: true},
+		{command: "po kube-system", want: "", ok: false},
+	}
+
+	for _, tt := range tests {
+		got, ok := ContextSuggestionArg(tt.command)
+		assert.Equal(t, tt.ok, ok)
+		assert.Equal(t, tt.want, got)
+	}
+}
+
+func TestNamespaceSuggestionArg(t *testing.T) {
+	tests := []struct {
+		command string
+		want    string
+		ok      bool
+	}{
+		{command: "po ", want: "", ok: false},
+		{command: "po k", want: "k", ok: true},
+		{command: "po kube-", want: "kube-", ok: true},
+		{command: "po neo-bench", want: "neo-bench", ok: true},
+		{command: "ctx p", want: "", ok: false},
+		{command: "xray dp", want: "", ok: false},
+		{command: "xray dp kube-", want: "kube-", ok: true},
+		{command: "help k", want: "", ok: false},
+	}
+
+	for _, tt := range tests {
+		got, ok := NamespaceSuggestionArg(tt.command)
+		assert.Equal(t, tt.ok, ok)
+		assert.Equal(t, tt.want, got)
+	}
+}
+
+func TestShouldSuggestNamespace(t *testing.T) {
+	tests := []struct {
+		command   string
+		activeNS  string
+		want      bool
+	}{
+		{command: "po ", activeNS: "neo-bench", want: false},
+		{command: "po k", activeNS: "neo-bench", want: true},
+		{command: "po neo-bench", activeNS: "neo-bench", want: false},
+		{command: "po neo-bench", activeNS: "default", want: true},
+		{command: "ctx p", activeNS: "neo-bench", want: false},
+		{command: "xray dp kube-", activeNS: "neo-bench", want: true},
+	}
+
+	for _, tt := range tests {
+		assert.Equal(t, tt.want, ShouldSuggestNamespace(tt.command, tt.activeNS))
+	}
+}

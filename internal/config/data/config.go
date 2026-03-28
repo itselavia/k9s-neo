@@ -38,13 +38,26 @@ func (c *Config) Merge(c1 *Config) {
 
 // Validate ensures config is in norms.
 func (c *Config) Validate(conn client.Connection, contextName, clusterName string) {
+	c.validate(conn, contextName, clusterName, true)
+}
+
+// ValidateWithoutNamespace ensures config is in norms without namespace checks.
+func (c *Config) ValidateWithoutNamespace(conn client.Connection, contextName, clusterName string) {
+	c.validate(conn, contextName, clusterName, false)
+}
+
+func (c *Config) validate(conn client.Connection, contextName, clusterName string, validateNamespace bool) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
 	if c.Context == nil {
 		c.Context = NewContext()
 	}
-	c.Context.Validate(conn, contextName, clusterName)
+	if validateNamespace {
+		c.Context.Validate(conn, contextName, clusterName)
+		return
+	}
+	c.Context.ValidateWithoutNamespace(conn, contextName, clusterName)
 }
 
 // Dump used for debugging.
