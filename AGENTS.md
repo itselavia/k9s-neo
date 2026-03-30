@@ -173,11 +173,12 @@ Most likely early wins:
 4. Add lifecycle markers and the rerunnable benchmark harness.
 5. Validate the harness locally with replay fixtures.
 6. Capture the first live baseline on a disposable local cluster.
-7. Land shallow, high-confidence wins one by one:
-   - lazy metrics by default
-   - disable node pod counting by default
-   - static core aliases plus Agones allowlist
-   - strict read-only hardening
+7. Land shallow, high-confidence wins one by one, and amplify the local lab when
+   the current control plateaus:
+   - trim obvious startup breadth first
+   - measure metrics on a metrics-enabled local profile
+   - measure node-path work on a node-stress local profile
+   - keep strict read-only hardening as a separate safety track
 8. Re-benchmark after each change and update the decision matrix.
 9. Only then consider deeper changes:
    - node drill-down path repair
@@ -195,14 +196,23 @@ The next tasks should be:
    - `--perf-skip-crd-augment`
    - `--perf-skip-namespace-validation`
    - measured note: `docs/development/step-7a-small-discovery-cuts-note.md`
-3. start Step 7B next:
-   - static core aliases
-   - explicit Agones allowlist
-   - generic CRDs off the hot path by default
-4. keep read-only RBAC preflight reduction demoted unless discovery wins stall
-5. treat lazy metrics as still important, but not yet directly measurable on this cluster because no metrics API is present
-6. keep deeper data-path work blocked on benchmark evidence
-7. keep strict read-only hardening separate from benchmark-baseline capture
+3. treat the static-core registry and ambient-metrics probes as diagnostic, not promoted
+4. treat `metrics-small` as complete and reproducible:
+   - control note: `docs/development/step-7a-metrics-small-control-note.md`
+   - A/B note: `docs/development/step-7a-metrics-small-ambient-off-note.md`
+   - ambient-metrics-off stays cleanup-only on this machine
+5. treat `nodes-small` as complete and reproducible:
+   - control note: `docs/development/step-7a-nodes-small-control-note.md`
+   - characterization note: `docs/development/step-7e-node-path-characterization-note.md`
+   - keep only one active minikube profile at a time on the shared `k9s-neo` Colima backend when using `nodes-small`
+6. reject node pod counting for now on this machine:
+   - the hotter drilldown path is real
+   - the paired characterization points at the drilldown hydration path instead
+7. make the next implementation target the node-to-pod drilldown hydration path:
+   - inspect or repair why drilldown opens a cluster-scope `pods:watch` before terminal Pod useful row
+8. keep read-only RBAC preflight reduction demoted unless later evidence says it matters
+9. keep deeper data-path work blocked on benchmark evidence
+10. keep strict read-only hardening separate from benchmark-baseline capture
 
 Step 4 is complete in this branch:
 

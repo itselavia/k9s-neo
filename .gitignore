@@ -27,4 +27,6 @@ kind
 __debug_bin*
 fg.yaml
 hack/bench/vars.local.json
+hack/bench/vars.metrics-small.json
+hack/bench/vars.nodes-small.json
 artifacts/bench/

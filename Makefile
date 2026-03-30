@@ -33,20 +33,62 @@ local-lab-install:       ## Install kubectl, minikube, colima, lima, and docker 
 local-lab-start:         ## Start the disposable local colima + minikube profile
 	@bash hack/local-lab/start-cluster.sh
 
+local-lab-start-metrics-small: ## Start the metrics-small local profile with metrics-server enabled
+	@bash hack/local-lab/start-metrics-small.sh
+
+local-lab-start-nodes-small: ## Start the nodes-small local profile with two minikube nodes
+	@bash hack/local-lab/start-nodes-small.sh
+
 local-lab-seed:          ## Seed the local benchmark namespace and workloads
 	@bash hack/local-lab/seed-bench.sh
+
+local-lab-seed-metrics-small: ## Seed the benchmark namespace on the metrics-small profile
+	@bash hack/local-lab/seed-metrics-small.sh
+
+local-lab-seed-nodes-small: ## Seed the benchmark namespace on the nodes-small profile
+	@bash hack/local-lab/seed-nodes-small.sh
 
 local-lab-write-vars:    ## Write hack/bench/vars.local.json for the disposable local profile
 	@bash hack/local-lab/write-vars.sh
 
+local-lab-write-vars-metrics-small: ## Write hack/bench/vars.metrics-small.json for the metrics-small profile
+	@bash hack/local-lab/write-vars-metrics-small.sh
+
+local-lab-write-vars-nodes-small: ## Write hack/bench/vars.nodes-small.json for the nodes-small profile
+	@bash hack/local-lab/write-vars-nodes-small.sh
+
 local-lab-smoke-required: ## Run the required Step 6 scenarios once cold and once warm
 	@bash hack/local-lab/smoke-required.sh
+
+local-lab-smoke-step7a-metrics-small: ## Run the Step 7A control smoke on metrics-small
+	@bash hack/local-lab/smoke-step7a-metrics-small.sh
+
+local-lab-smoke-step7a-nodes-small: ## Run the Step 7A control smoke on nodes-small
+	@bash hack/local-lab/smoke-step7a-nodes-small.sh
+
+local-lab-smoke-step7e-node-path-characterization-nodes-small: ## Run the Step 7E node-path characterization smoke on nodes-small
+	@bash hack/local-lab/smoke-step7e-node-path-characterization-nodes-small.sh
 
 local-lab-capture-baseline: ## Run the required Step 6 scenarios with baseline counts and write the baseline note
 	@bash hack/local-lab/capture-baseline.sh
 
+local-lab-capture-step7a-metrics-small: ## Capture the Step 7A control on metrics-small and write the control note
+	@bash hack/local-lab/capture-step7a-metrics-small.sh
+
+local-lab-capture-step7a-nodes-small: ## Capture the Step 7A control on nodes-small and write the control note
+	@bash hack/local-lab/capture-step7a-nodes-small.sh
+
+local-lab-capture-step7e-node-path-characterization-nodes-small: ## Capture the Step 7E node-path characterization run on nodes-small and write the characterization note
+	@bash hack/local-lab/capture-step7e-node-path-characterization-nodes-small.sh
+
 local-lab-delete:        ## Delete the disposable local colima + minikube profile
 	@bash hack/local-lab/delete-cluster.sh
+
+local-lab-delete-metrics-small: ## Delete the metrics-small local profile
+	@bash hack/local-lab/delete-metrics-small.sh
+
+local-lab-delete-nodes-small: ## Delete the nodes-small local profile
+	@bash hack/local-lab/delete-nodes-small.sh
 
 cover:                   ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out

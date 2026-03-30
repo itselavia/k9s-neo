@@ -15,7 +15,14 @@ fork is still mutation-capable.
 
 ## Current Status
 
-Step 6 has started in this branch.
+Step 6 is complete in this branch.
+
+This document is now historical execution context for how the first local
+baseline was established. Use these as the current guides instead:
+
+- `docs/development/step-6-local-decision-matrix.md`
+- `docs/development/step-7-plan.md`
+- `hack/local-lab/README.md`
 
 What is already proven locally:
 
@@ -25,10 +32,10 @@ What is already proven locally:
 - the live PTY harness can launch the real K9s Neo binary with a controlling TTY
 - `pods_startup` has completed successfully with lifecycle markers and raw artifacts
 
-What remains for Step 6:
+What was completed in Step 6:
 
-- widen the local baseline to the other primary scenarios
-- capture a stable local baseline set rather than a single smoke run
+- widen the local baseline to the primary scenarios
+- capture a stable local baseline set
 - use that baseline as the control for the first shallow product changes
 
 ## Environment Decision
@@ -176,15 +183,21 @@ Acceptance gate:
 
 Only after Phase 3 should we begin product changes.
 
-Priority order remains:
+Historical priority order at the end of Step 6 was:
 
 1. lazy metrics by default
 2. disable node pod counting by default
 3. narrow discovery with static core aliases plus Agones allowlist
 4. strict read-only hardening as a separate workstream
 
-Each change should be benchmarked individually against the same local setup before
-we accept it as real progress.
+That ordering has since been refined by later Step 7 evidence. Use these as the
+current guides instead:
+
+- `docs/development/step-7-plan.md`
+- `docs/development/step-7-lab-amplification-plan.md`
+
+Each change should still be benchmarked individually against the appropriate
+local setup before we accept it as real progress.
 
 ## Decision Gates
 

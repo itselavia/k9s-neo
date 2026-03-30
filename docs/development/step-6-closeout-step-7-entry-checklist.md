@@ -184,7 +184,7 @@ control table.
 - divergence cost
 - recommendation status
 
-### Initial Candidate Order
+### Historical Candidate Order
 
 1. small discovery cuts first
 2. static core aliases plus Agones allowlist if discovery is still dominant after the small cuts
@@ -192,8 +192,12 @@ control table.
 4. decide later whether local metrics are needed to measure lazy metrics on this machine
 5. strict read-only hardening as a separate safety track
 
-Do not reorder this list on intuition alone after the baseline exists. Reorder it
-only when the measured baseline points somewhere else.
+This was the correct order at the end of Step 6.
+
+It is no longer the current execution order after the later Step 7 probes.
+Use `docs/development/step-7-plan.md` and
+`docs/development/step-7-lab-amplification-plan.md` for the current next-step
+sequence.
 
 ## Step 7 Entry Criteria
 
@@ -234,7 +238,10 @@ Do not do these before the first local baseline is frozen:
 Those may become correct later. They are not the right move before the baseline is
 frozen.
 
-## Recommended Step 7 Execution Order
+## Historical Step 7 Execution Order
+
+The remainder of this section is preserved as the original Step 6 handoff.
+Do not treat it as the current Step 7 execution order.
 
 ### Change 1: Lazy Metrics By Default
 
@@ -284,4 +291,6 @@ If a new thread picks this up, it should start here:
 1. confirm the local lab still matches the fixed control environment
 2. confirm the required scenario set is still green
 3. capture or verify the stable Step 6 baseline artifact set
-4. only then begin Step 7 with lazy metrics by default
+4. use `docs/development/step-7-plan.md` for the current Step 7 order
+5. use `docs/development/step-7-lab-amplification-plan.md` for the next
+   execution step after the current plateau

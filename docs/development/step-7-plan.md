@@ -23,25 +23,32 @@ Primary local control artifacts:
 - `docs/development/step-6-closeout-step-7-entry-checklist.md`
 - `artifacts/bench/20260326-222409/local-baseline-v1`
 
-## What Changed After The Baseline
+## Status Reset After Step 7A
 
-The original hypothesis order was:
+The original hypothesis order from the Step 6 handoff was:
 
 1. lazy metrics
 2. discovery and CRD breadth
 3. node-path work
 4. RBAC preflight fan-out
 
-The local baseline changes the execution order on this machine:
+The first measured reset on this machine was correct:
 
-- discovery and RBAC preflight fan-out are directly visible right now
-- ambient metrics are not directly measurable right now because the local cluster
-  has no metrics API
-- node pod counting is still real code debt, but this single-node lab does not
-  stress its worst-case behavior yet
+- Step 7A small discovery cuts earned a real win
+- read-only RBAC preflight stayed measurable but too modest to deserve the first
+  shallow-win slot
 
-That means Step 7 should optimize for the best measurable next PR, not the oldest
-hypothesis ordering.
+The second reset is now also required:
+
+- the Step 7B static-core smoke did not earn promotion on the current control
+  lab
+- the ambient-metrics diagnostic probe found the real source of the remaining
+  startup `/api` and `/apis` requests, but it also did not earn promotion on the
+  current control lab
+
+That means the current single-node control lab has started to plateau for shallow
+startup probes. The next serious Step 7 move is lab amplification, not another
+startup micro-cut on the same control environment.
 
 ## Step 7 Execution Order
 
@@ -126,96 +133,217 @@ Staff read:
 
 - keep these cuts as measured runtime-only probes for now
 - discovery is still clearly a top startup cost after Step 7A
-- Step 7B is now the correct next move
+- later probes showed that the frozen control lab needed amplification before
+  the next Step 7 target could be chosen confidently
 
-### PR 7B: Escalate To Static Core Registry Plus Agones Allowlist Only If Needed
+### Step 7B: Split The Local Lab Before More Shallow Cuts
 
-#### Why second
+#### Why now
 
-- this is still a strong candidate
-- but it has more divergence cost than the smaller discovery cuts
-- we should only take it if the smaller discovery cuts are not enough
-
-#### Goal
-
-Replace broad startup discovery for the hot path with a curated static set of core
-resource metas plus explicit Agones allowlist handling.
-
-#### Scope
-
-- `internal/dao/registry.go`
-- `internal/client/gvr.go`
-- any command or alias lookup wiring needed to preserve the supported triage loop
-- tests around meta lookup and supported resources
-
-#### Entry condition
-
-The entry condition is now met.
-
-Step 7A yielded a real local win, but it did not exhaust discovery as the top
-startup cost.
-
-#### Benchmark set
-
-- same as PR 7B
-
-#### Success criteria
-
-- startup request shape is materially narrower
-- the supported v0 resource set still works
-- no generic CRD hot-path dependency remains by default
-
-### PR 7C: Node Pod Counting Reduction
-
-#### Why third
-
-- still likely important in real clusters
-- but this local lab does not stress it enough to justify making it the first move
+- the frozen single-node control lab was good enough to earn Step 7A
+- it is no longer discriminating enough to justify more startup micro-probes
+- the next best move is to amplify the lab without destroying comparability
 
 #### Goal
 
-Disable node pod counting by default behind a measurable switch or config change.
+Create targeted local profiles that expose the next hidden cost centers without
+overwriting the Step 6 and Step 7A control environment.
 
-#### Scope
+#### Primary plan
 
-- `internal/view/node.go`
-- `internal/dao/node.go`
-- `internal/config/k9s.go`
-- related tests
+Use `docs/development/step-7-lab-amplification-plan.md` as the execution guide.
 
-#### Benchmark set
+Immediate profile order:
 
-- `nodes_first_render`
-- optional `node_pod_drilldown` after we decide whether to widen the local lab
+1. keep the current `control-small` profile frozen
+2. add `metrics-small`:
+   - same topology
+   - metrics-server enabled
+3. add `nodes-small`:
+   - two-node topology
+   - deliberate pod skew
 
 #### Success criteria
 
-- node view request and watch behavior stays correct
-- local timings do not regress
-- code path becomes simpler and safer for larger future environments
+- the original control remains comparable to Step 6 and Step 7A
+- the new profiles are reproducible from repo-owned scripts
+- the next implementation target is chosen from amplified evidence rather than
+  from the stale pre-plateau plan
 
-### PR 7D: Metrics Branch Decision
+### Measured Candidate: Ambient Metrics On A Metrics-Enabled Lab
 
-#### Why fourth
+#### Result
 
-- the current local cluster has no metrics API
-- the baseline cannot prove the value of lazy metrics yet
+The `metrics-small` A/B is now complete:
 
-#### Decision point
+- control note: `docs/development/step-7a-metrics-small-control-note.md`
+- control artifact root: `artifacts/bench/20260328-200943/step7a-metrics-small-control-v1`
+- candidate note: `docs/development/step-7a-metrics-small-ambient-off-note.md`
+- candidate artifact root: `artifacts/bench/20260329-124834/step7a-metrics-small-ambient-off-v1`
 
-After discovery work has settled:
+#### What it proved
 
-- if the measured wins are already strong enough, keep moving without local metrics
-- if we still need to validate the metrics hypothesis, explicitly decide whether to
-  enable metrics-server locally
+- the candidate removed the expected request families before first useful row:
+  - `/api`
+  - `/apis`
+  - real `metrics.k8s.io` pod and node requests
+- startup request count and pre-cutoff response bytes dropped sharply
+
+#### Why it is not promoted
+
+- `pods_startup` warm first useful row improved only `-2.43%`
+- `nodes_first_render` warm first useful row improved only `-4.87%`
+- those are real gains, but still below the project `>=5%` primary promotion bar
 
 #### Recommendation
 
-Do not enable local metrics-server before the discovery work has been measured.
+- do not promote `--perf-disable-ambient-metrics` as the next headline Step 7 win
+- keep it as a credible cleanup candidate with strong request-shape evidence
+- keep it parked as cleanup-only on this machine
 
-### PR 7E: Read-Only RBAC Preflight Reduction
+### Measured Control: Nodes-Small Step 7A
 
-#### Why demoted
+#### Result
+
+The `nodes-small` Step 7A control is now complete:
+
+- control note: `docs/development/step-7a-nodes-small-control-note.md`
+- control artifact root: `artifacts/bench/20260329-153637/step7a-nodes-small-control-v1`
+
+#### What it proved
+
+- the two-node `nodes-small` profile is reproducible from repo-owned scripts
+- the benchmark pods land deterministically on the worker node
+- the narrow `nodes_first_render` control stays stable on that profile
+
+#### Why it is not enough yet
+
+- `nodes_first_render` stayed almost flat versus the earlier Step 7A control on
+  this machine:
+  - previous warm first useful row: about `1151.17 ms`
+  - `nodes-small` warm first useful row: about `1153.36 ms`
+- that means node view render alone still does not expose enough extra cost to
+  justify a node optimization patch
+
+#### Recommendation
+
+- do not start a node pod counting code change yet
+- use `node_pod_drilldown` on `nodes-small` next
+- keep the initial `nodes-small` control as the node-path reference artifact
+
+### Measured Candidate: Nodes-Small Node-Pod Drilldown
+
+#### Result
+
+The `nodes-small` drilldown evidence step is now complete:
+
+- note: `docs/development/step-7d-node-pod-drilldown-nodes-small-note.md`
+- candidate artifact root: `artifacts/bench/20260329-162922/step7d-node-pod-drilldown-nodes-small-v1`
+- comparison basis:
+  - `docs/development/step-7a-nodes-small-control-note.md`
+  - `artifacts/bench/20260329-153637/step7a-nodes-small-control-v1`
+
+#### What it proved
+
+- `node_pod_drilldown` is materially hotter than the `nodes-small`
+  `nodes_first_render` control on this machine:
+  - warm first useful row: about `+17.35%`
+  - warm stable interactive: about `+16.40%`
+- the matched terminal view is the intended `Pod` view on the hot worker node
+
+#### Why it is still not enough
+
+- pre-cutoff request shape stayed effectively flat versus the control:
+  - API requests: flat
+  - bytes before first useful row: flat
+  - objects before first useful row: flat
+- the representative warm run still showed no pre-cutoff `pods:list`
+- that means the hotter drilldown path is real, but it is not yet attributable
+  enough to justify a node pod counting patch
+
+#### Recommendation
+
+- do not start a node pod counting code change yet
+- treat Step 7D as evidence of a hotter node drilldown path, not yet as evidence
+  of the specific fix
+- Step 7E now provides that characterization:
+  - shared node-entry phases are nearly flat
+  - the extra cost sits in the drilldown-only tail
+  - the only stable drilldown-only request family before terminal Pod useful
+    row is a cluster-scope `pods:watch`
+- only start a node optimization patch if that attribution points back to
+  node-to-pod data work clearly enough
+
+### Measured Characterization: Nodes-Small Node-Path Pair
+
+#### Result
+
+The paired node-path characterization is now complete:
+
+- note: `docs/development/step-7e-node-path-characterization-note.md`
+- artifact root: `artifacts/bench/20260329-204049/step7e-node-path-characterization-nodes-small-v1`
+
+#### What it proved
+
+- `node_pod_drilldown` stays materially hotter than `nodes_first_render` on
+  this machine:
+  - warm first useful row: about `+11.76%`
+  - warm stable interactive: about `+11.57%`
+- the shared node-entry phases are nearly flat between the two scenarios
+- the stable extra cost is concentrated in the drilldown-only tail:
+  - Node useful row -> filter settle: about `123 ms`
+  - filter settle -> final Pod activate: about `50 ms`
+  - final Pod activate -> final Pod useful row: only a few milliseconds
+
+#### Why this changes the next target
+
+- the hotter path is now attributable enough to reject the old node pod counting
+  hypothesis on this lab
+- the only stable drilldown-only request family before the terminal Pod useful
+  row is a cluster-scope `pods:watch`
+- pod bytes and pod objects before the terminal Pod useful row stayed at `0`
+
+#### Recommendation
+
+- do not start a node pod counting patch on this machine
+- make the next implementation target the node-to-pod drilldown hydration path
+- specifically inspect why node drilldown opens a cluster-scope `pods:watch`
+  before the terminal Pod useful row
+
+### Future Candidate: Node Pod Counting Reduction
+
+#### Why not yet
+
+- node-path cost remains plausible
+- Step 7D proved the drilldown path is hotter, but it still did not show
+  decision-grade attribution to the node pod counting hypothesis
+
+#### Recommendation
+
+Keep this plausible but parked, and no longer treat it as the next node-path
+patch on this machine.
+
+The next step is not the optimization patch itself. The next step is a
+node-to-pod drilldown hydration-path repair or instrumentation pass, using the
+Step 7E characterization artifact as the starting point.
+
+### Future Candidate: Static Core Registry Plus Agones Allowlist
+
+#### Why parked
+
+- the static-core smoke was useful diagnostically
+- it did not earn promotion on the current control lab
+- the traces showed that the remaining startup `/api` and `/apis` requests were
+  coming from the earlier metrics probe seam, not from the later registry path
+
+#### Recommendation
+
+Park this line until the amplified lab says discovery is still the best next
+performance target.
+
+### Future Candidate: Read-Only RBAC Preflight Reduction
+
+#### Why still demoted
 
 - it is real, measurable, and low risk
 - but on this local lab the direct measured effect is modest:
@@ -249,7 +377,9 @@ access behind a runtime-only kill switch.
 Do not spend the first shallow-win slot on this.
 Only pick it up if:
 
-- discovery work is already done and we still want to reduce request fan-out
+- the amplified lab says it still matters
+- or the discovery and metrics work are already done and we still want to reduce
+  request fan-out
 - or we decide the failure-surface reduction is worth it as a secondary cleanup
 
 ## Separate Safety Track
@@ -293,7 +423,9 @@ Stop and reassess if any of these happen:
 - the local lab becomes too unrepresentative for the remaining hypothesis
 
 Step 7A did not trigger a stop rule. It validated the direction and justified
-continuing discovery work at the larger static-core layer.
+continuing measurement-led work. Later Step 7 probes did trigger a direction
+reset: the next node-path step must be attribution work, not a speculative
+optimization patch.
 - safety hardening starts to conflict with fair baseline comparisons
 
 ## Step 7 Recommendation
@@ -301,9 +433,11 @@ continuing discovery work at the larger static-core layer.
 The next implementation order on this machine should be:
 
 1. PR 7A: small discovery cuts
-2. PR 7B only if PR 7A is not enough
-3. PR 7C node pod counting after that
-4. PR 7D metrics decision later, not first
-5. PR 7E RBAC preflight reduction only as a secondary or cleanup change
+2. keep the `metrics-small` ambient-off result as cleanup-only, not promoted
+3. keep the `nodes-small` Step 7A and Step 7D artifacts as the node-path evidence base
+4. use the Step 7E characterization result to inspect the node-to-pod drilldown path
+5. only if that path still points back to pod counting later, test node pod counting reduction
+6. keep RBAC preflight reduction only as a secondary or cleanup change
+7. keep strict read-only hardening as a separate safety track
 
 That is the highest-signal, lowest-regret Step 7 path for the current local lab.
