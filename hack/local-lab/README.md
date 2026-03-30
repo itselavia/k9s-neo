@@ -2,6 +2,10 @@
 
 This directory contains the repo-owned scripts for the disposable local benchmark lab.
 
+If you are moving this lab to a larger local machine, read
+`docs/development/step-7-macbook-air-scaleup-handoff.md` first. That document
+defines the cross-machine evidence rules and the disciplined scale-up sequence.
+
 The intended Step 6 execution order is:
 
 1. install tools

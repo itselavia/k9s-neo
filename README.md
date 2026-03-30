@@ -21,6 +21,7 @@ This branch is the instrumented baseline and benchmark-prep branch.
 - The current branch is not yet strictly read-only by construction.
 - Agones is in the product contract, but explicit Agones support has not landed in code yet.
 - The next node-path step is to inspect or repair the node-to-pod drilldown hydration path, not a node pod counting patch.
+- If moving to a larger local machine, treat it as a new lab generation and use `docs/development/step-7-macbook-air-scaleup-handoff.md` before changing the benchmark story.
 
 ## What This Repo Is Trying To Prove
 
@@ -87,6 +88,7 @@ More local setup detail lives in:
 - `docs/development/step-7a-metrics-small-ambient-off-note.md`
 - `docs/development/step-7a-nodes-small-control-note.md`
 - `docs/development/step-7e-node-path-characterization-note.md`
+- `docs/development/step-7-macbook-air-scaleup-handoff.md`
 - `hack/local-lab/README.md`
 
 ## Benchmarking And Evidence Boundaries

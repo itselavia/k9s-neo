@@ -213,6 +213,11 @@ The next tasks should be:
 8. keep read-only RBAC preflight reduction demoted unless later evidence says it matters
 9. keep deeper data-path work blocked on benchmark evidence
 10. keep strict read-only hardening separate from benchmark-baseline capture
+11. if moving to a larger local machine, use `docs/development/step-7-macbook-air-scaleup-handoff.md`:
+   - treat it as a new lab generation
+   - recreate the unchanged small controls first
+   - do not compare raw medians across machines as product evidence
+   - only let the new machine change the plan if the hotspot ranking or promotion status changes
 
 Step 4 is complete in this branch:
 
